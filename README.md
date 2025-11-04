@@ -54,9 +54,10 @@ Crea un archivo `.env.local` en la raíz del proyecto:
 
 ```env
 # Google Cloud Firestore Configuration
-GOOGLE_CLOUD_PROJECT_ID=tu-project-id
+# ⚠️ SOLO private_key lleva comillas, las demás NO
+GOOGLE_CLOUD_PROJECT_ID=party-rsvp-477219
 GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTu clave privada aquí\n-----END PRIVATE KEY-----\n"
-GOOGLE_CLOUD_CLIENT_EMAIL=tu-service-account@tu-project.iam.gserviceaccount.com
+GOOGLE_CLOUD_CLIENT_EMAIL=rooftop@party-rsvp-477219.iam.gserviceaccount.com
 FIRESTORE_COLLECTION_NAME=rsvps
 
 # Opcional: Para envío de emails
@@ -64,10 +65,10 @@ FIRESTORE_COLLECTION_NAME=rsvps
 # FROM_EMAIL=noreply@yourdomain.com
 ```
 
-**💡 Nota:** Extrae los valores del archivo JSON descargado:
-- `GOOGLE_CLOUD_PROJECT_ID` → `project_id`
-- `GOOGLE_CLOUD_PRIVATE_KEY` → `private_key` (mantén el formato con `\n`)
-- `GOOGLE_CLOUD_CLIENT_EMAIL` → `client_email`
+**💡 Extrae del archivo JSON descargado:**
+- `project_id` → `GOOGLE_CLOUD_PROJECT_ID` (❌ sin comillas)
+- `private_key` → `GOOGLE_CLOUD_PRIVATE_KEY` (✅ **con comillas**, incluye `\n`)
+- `client_email` → `GOOGLE_CLOUD_CLIENT_EMAIL` (❌ sin comillas)
 
 ### 4. Agregar Imágenes
 

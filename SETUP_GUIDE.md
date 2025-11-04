@@ -62,7 +62,11 @@ O simplemente arrastra la imagen a la carpeta `public/` en VS Code.
    - Click en **Create and Continue**
 
 4. **Asignar permisos:**
-   - Role: **Cloud Datastore User**
+   - En el campo "Select a role", busca: **"datastore"**
+   - Selecciona (cualquiera funciona):
+     - **"Editor de datos de Cloud Datastore"** ✅ (recomendado - español)
+     - **"Cloud Datastore User"** (inglés)
+     - **"Cloud Datastore Owner"** (más permisos)
    - Click en **Continue**
    - Click en **Done**
 
@@ -74,20 +78,36 @@ O simplemente arrastra la imagen a la carpeta `public/` en VS Code.
 
 6. **Configurar en `.env.local`:**
    
-   Abre el archivo JSON descargado y extrae estos valores:
+   Abre el archivo JSON descargado. Verás algo como:
+   
+   ```json
+   {
+     "project_id": "party-rsvp-477219",
+     "private_key": "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n",
+     "client_email": "rooftop-party@party-rsvp-477219.iam.gserviceaccount.com"
+   }
+   ```
+   
+   Crea `.env.local` así (⚠️ **fíjate en las comillas**):
    
    ```env
-   GOOGLE_CLOUD_PROJECT_ID=tu-project-id
-   GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTu clave privada\n-----END PRIVATE KEY-----\n"
-   GOOGLE_CLOUD_CLIENT_EMAIL=tu-service-account@tu-project.iam.gserviceaccount.com
+   # SIN comillas (copia solo el valor):
+   GOOGLE_CLOUD_PROJECT_ID=party-rsvp-477219
+   
+   # CON comillas (copia TODO incluyendo comillas y \n):
+   GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
+   
+   # SIN comillas (copia solo el valor):
+   GOOGLE_CLOUD_CLIENT_EMAIL=rooftop-party@party-rsvp-477219.iam.gserviceaccount.com
+   
+   # SIN comillas:
    FIRESTORE_COLLECTION_NAME=rsvps
    ```
 
-   **� Importante:**
-   - Copia `private_key` **tal cual** del JSON (con los `\n`)
-   - Las comillas dobles son necesarias
-   - `project_id` → `GOOGLE_CLOUD_PROJECT_ID`
-   - `client_email` → `GOOGLE_CLOUD_CLIENT_EMAIL`
+   **💡 Regla simple:**
+   - ✅ **SOLO `GOOGLE_CLOUD_PRIVATE_KEY` lleva comillas**
+   - ❌ **Las demás NO llevan comillas**
+   - ⚠️ La private_key debe incluir los `\n` (saltos de línea)
 
 **💰 Costo:** Firestore tiene un tier gratuito generoso. Un evento de 500 personas está dentro del uso gratuito.
 

@@ -62,7 +62,9 @@ Para **guardar los RSVPs permanentemente**, necesitas Google Cloud Firestore.
 3. **Nombre:** `rooftop-party-app`
 4. **Description:** "Service account para app de invitaciones"
 5. **Click:** "Create and Continue"
-6. **Role:** Busca y selecciona **"Cloud Datastore User"**
+6. **Role:** Busca **"datastore"** y selecciona:
+   - En español: **"Editor de datos de Cloud Datastore"** ✅ (recomendado)
+   - En inglés: **"Cloud Datastore User"** o **"Cloud Datastore Owner"**
 7. **Click:** "Continue" → "Done"
 
 ### Paso 4: Generar Clave JSON
@@ -80,20 +82,29 @@ Para **guardar los RSVPs permanentemente**, necesitas Google Cloud Firestore.
 
 1. **Ve a:** https://vercel.com/brainergys-projects/rooftop-party-invitation/settings/environment-variables
 
-2. **Abre el archivo JSON** descargado y extrae estos valores:
+2. **Abre el archivo JSON** descargado. Verás algo como:
+
+   ```json
+   {
+     "project_id": "party-rsvp-477219",
+     "private_key": "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n",
+     "client_email": "rooftop@party-rsvp-477219.iam.gserviceaccount.com"
+   }
+   ```
 
 3. **Agrega estas 4 variables:**
 
-   | Name | Value | Ejemplo |
+   | Name | Value | ⚠️ ¿Con comillas? |
    |------|-------|---------|
-   | `GOOGLE_CLOUD_PROJECT_ID` | `project_id` del JSON | `rooftop-party-app-123456` |
-   | `GOOGLE_CLOUD_PRIVATE_KEY` | `private_key` del JSON (completo con `\n`) | `"-----BEGIN PRIVATE KEY-----\n...` |
-   | `GOOGLE_CLOUD_CLIENT_EMAIL` | `client_email` del JSON | `rooftop-party-app@...iam.gserviceaccount.com` |
-   | `FIRESTORE_COLLECTION_NAME` | `rsvps` | `rsvps` |
+   | `GOOGLE_CLOUD_PROJECT_ID` | `party-rsvp-477219` | ❌ NO |
+   | `GOOGLE_CLOUD_PRIVATE_KEY` | `"-----BEGIN PRIVATE KEY-----\n...` (TODO) | ✅ SÍ |
+   | `GOOGLE_CLOUD_CLIENT_EMAIL` | `rooftop@party-rsvp-477219.iam.gserviceaccount.com` | ❌ NO |
+   | `FIRESTORE_COLLECTION_NAME` | `rsvps` | ❌ NO |
 
 4. **Importante:** 
    - Selecciona todos los ambientes (Production, Preview, Development)
-   - La `PRIVATE_KEY` debe incluir las comillas y los `\n`
+   - **SOLO `PRIVATE_KEY` lleva comillas** (las demás NO)
+   - La `PRIVATE_KEY` debe incluir los `\n` (saltos de línea)
 
 5. **Click:** "Save"
 
