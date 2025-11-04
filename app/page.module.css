@@ -39,8 +39,8 @@
   height: 100%;
   background: linear-gradient(
     180deg,
-    rgba(26, 0, 51, 0.4) 0%,
-    rgba(26, 0, 51, 0.8) 100%
+    rgba(26, 0, 51, 0.2) 0%,
+    rgba(26, 0, 51, 0.5) 100%
   );
 }
 
@@ -102,7 +102,7 @@
 
 /* Event info */
 .eventInfo {
-  background: rgba(26, 0, 51, 0.8);
+  background: rgba(26, 0, 51, 0.6);
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 20, 147, 0.3);
   border-radius: 20px;
