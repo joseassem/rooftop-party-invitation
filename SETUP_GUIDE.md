@@ -6,7 +6,7 @@
 2. ✅ Dependencias instaladas
 3. ✅ Componentes y páginas implementadas
 4. ✅ API Routes configuradas
-5. ✅ Integración con Azure Cosmos DB
+5. ✅ Integración con Google Cloud Firestore
 6. ✅ Diseño mobile-first con animaciones
 
 ---
@@ -38,46 +38,58 @@ O simplemente arrastra la imagen a la carpeta `public/` en VS Code.
 
 ---
 
-## 🔐 PASO 2: Configurar Azure Cosmos DB
+## 🔐 PASO 2: Configurar Google Cloud Firestore
 
-Tienes 2 opciones:
+### Configuración Paso a Paso:
 
-### Opción A: Usar el Emulador Local (Más rápido para probar)
+1. **Crear proyecto en Google Cloud:**
+   - Ve a: https://console.cloud.google.com
+   - Crea un nuevo proyecto o selecciona uno existente
+   - Nombre sugerido: "rooftop-party-app"
 
-1. **Instalar el emulador:**
-   - Descarga: https://aka.ms/cosmosdb-emulator
-   - O usa Docker (ver README.md)
+2. **Habilitar Cloud Firestore:**
+   - Busca "Firestore" en el menú de búsqueda
+   - Click en "Create Database"
+   - Elige modo **Native**
+   - Selecciona tu región (ejemplo: `us-central1`)
+   - Empieza en modo **Production** (con reglas de seguridad)
 
-2. **Configuración en `.env.local`:**
+3. **Crear Service Account:**
+   - Ve a **IAM & Admin** > **Service Accounts**
+   - Click en **Create Service Account**
+   - Nombre: `rooftop-party-app`
+   - Descripción: "Service account para app de invitaciones"
+   - Click en **Create and Continue**
+
+4. **Asignar permisos:**
+   - Role: **Cloud Datastore User**
+   - Click en **Continue**
+   - Click en **Done**
+
+5. **Generar clave JSON:**
+   - En la lista de Service Accounts, encuentra la que creaste
+   - Click en los 3 puntos (⋮) > **Manage Keys**
+   - **Add Key** > **Create new key** > **JSON**
+   - Se descargará un archivo JSON (¡guárdalo en lugar seguro!)
+
+6. **Configurar en `.env.local`:**
+   
+   Abre el archivo JSON descargado y extrae estos valores:
+   
    ```env
-   COSMOS_ENDPOINT=https://localhost:8081/
-   COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-   COSMOS_DATABASE_NAME=rooftop-party-db
-   COSMOS_CONTAINER_NAME=rsvps
+   GOOGLE_CLOUD_PROJECT_ID=tu-project-id
+   GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTu clave privada\n-----END PRIVATE KEY-----\n"
+   GOOGLE_CLOUD_CLIENT_EMAIL=tu-service-account@tu-project.iam.gserviceaccount.com
+   FIRESTORE_COLLECTION_NAME=rsvps
    ```
 
-### Opción B: Usar Azure Cosmos DB en la Nube (Recomendado para producción)
+   **� Importante:**
+   - Copia `private_key` **tal cual** del JSON (con los `\n`)
+   - Las comillas dobles son necesarias
+   - `project_id` → `GOOGLE_CLOUD_PROJECT_ID`
+   - `client_email` → `GOOGLE_CLOUD_CLIENT_EMAIL`
 
-1. **Crear cuenta en Azure:**
-   - Ve a: https://portal.azure.com
-   - Crea un nuevo recurso → "Azure Cosmos DB"
-   - Selecciona API: **NoSQL**
-   - Modo: **Serverless** (¡es más barato!)
-
-2. **Obtener credenciales:**
-   - En el portal de Azure, ve a tu cuenta de Cosmos DB
-   - Menú lateral → "Keys"
-   - Copia el "URI" y "PRIMARY KEY"
-
-3. **Configurar en `.env.local`:**
-   ```env
-   COSMOS_ENDPOINT=https://tu-cuenta.documents.azure.com:443/
-   COSMOS_KEY=tu-primary-key-aqui
-   COSMOS_DATABASE_NAME=rooftop-party-db
-   COSMOS_CONTAINER_NAME=rsvps
-   ```
-
-**💰 Costo:** Con modo Serverless, un evento de 200 personas cuesta menos de $1 USD.
+**💰 Costo:** Firestore tiene un tier gratuito generoso. Un evento de 500 personas está dentro del uso gratuito.
 
 ---
 

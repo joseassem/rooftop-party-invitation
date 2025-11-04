@@ -18,7 +18,7 @@
 
 ## 💾 Para usar en PRODUCCIÓN:
 
-Configura Azure Cosmos DB siguiendo la guía: **SETUP_GUIDE.md**
+Configura Google Cloud Firestore siguiendo la guía: **SETUP_GUIDE.md**
 
 ---
 
@@ -46,5 +46,5 @@ Edita: `event-config.json`
 ## ❓ Ayuda:
 
 ¿No ves las imágenes? → Verifica que `public/background.jpg` existe
-¿Errores en consola? → Es normal sin Cosmos DB, funcionará en modo demo
+¿Errores en consola? → Es normal sin Firestore, funcionará en modo demo
 ¿Quieres producción? → Lee SETUP_GUIDE.md

@@ -1,13 +1,13 @@
 # 🎉 Rooftop Party - Invitación Web Interactiva
 
-Aplicación web elegante e impactante para invitaciones a eventos, diseñada con **Next.js 14**, **TypeScript**, y **Azure Cosmos DB**. Optimizada para mobile-first y lista para desplegar en Vercel.
+Aplicación web elegante e impactante para invitaciones a eventos, diseñada con **Next.js 14**, **TypeScript**, y **Google Cloud Firestore**. Optimizada para mobile-first y lista para desplegar en Vercel.
 
 ## ✨ Características
 
 - 🎨 **Diseño impactante** inspirado en el flyer del evento
 - 📱 **Mobile-first** - Perfectamente adaptado para smartphones
 - 🎭 **Animaciones suaves** con Framer Motion
-- 💾 **Base de datos Azure Cosmos DB** para almacenar RSVPs
+- 💾 **Base de datos Google Cloud Firestore** para almacenar RSVPs
 - 🔄 **Template reutilizable** - Fácil de actualizar para futuros eventos
 - ⚡ **Deploy rápido** en Vercel
 - 📊 **API de estadísticas** para monitorear asistencia
@@ -20,43 +20,54 @@ Aplicación web elegante e impactante para invitaciones a eventos, diseñada con
 npm install
 ```
 
-### 2. Configurar Azure Cosmos DB
+### 2. Configurar Google Cloud Firestore
 
-#### Opción A: Usar Azure Cosmos DB en la nube (Recomendado para producción)
+#### Paso 1: Crear Proyecto en Google Cloud
 
-1. Crea una cuenta en [Azure Portal](https://portal.azure.com)
-2. Crea un recurso de **Azure Cosmos DB** (API NoSQL)
-3. Selecciona el modo **Serverless** (ideal para eventos)
-4. Obtén tu **Endpoint** y **Primary Key** desde "Keys" en el portal
+1. Ve a [Google Cloud Console](https://console.cloud.google.com)
+2. Crea un nuevo proyecto o selecciona uno existente
+3. Habilita **Cloud Firestore API**
+   - Busca "Firestore" en el menú de búsqueda
+   - Selecciona "Cloud Firestore"
+   - Click en "Create Database"
+   - Elige modo **Native** y selecciona tu región preferida
 
-#### Opción B: Usar el emulador local (Desarrollo)
+#### Paso 2: Crear Service Account
 
-```bash
-# Instalar el emulador de Cosmos DB
-# Windows: Descarga desde https://aka.ms/cosmosdb-emulator
-# Docker:
-docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
-docker run -p 8081:8081 -p 10251:10251 -p 10252:10252 -p 10253:10253 -p 10254:10254 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+1. Ve a **IAM & Admin** > **Service Accounts**
+2. Click en **Create Service Account**
+3. Nombre: `rooftop-party-app`
+4. Role: **Cloud Datastore User**
+5. Click en **Create and Continue**
+6. Click en **Done**
 
-# Endpoint del emulador: https://localhost:8081/
-# Key del emulador: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-```
+#### Paso 3: Generar Clave JSON
+
+1. En la lista de Service Accounts, encuentra la que acabas de crear
+2. Click en los 3 puntos > **Manage Keys**
+3. **Add Key** > **Create new key** > **JSON**
+4. Se descargará un archivo JSON con las credenciales
 
 ### 3. Configurar Variables de Entorno
 
 Crea un archivo `.env.local` en la raíz del proyecto:
 
 ```env
-# Azure Cosmos DB Configuration
-COSMOS_ENDPOINT=https://your-account.documents.azure.com:443/
-COSMOS_KEY=your-primary-key-here
-COSMOS_DATABASE_NAME=rooftop-party-db
-COSMOS_CONTAINER_NAME=rsvps
+# Google Cloud Firestore Configuration
+GOOGLE_CLOUD_PROJECT_ID=tu-project-id
+GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTu clave privada aquí\n-----END PRIVATE KEY-----\n"
+GOOGLE_CLOUD_CLIENT_EMAIL=tu-service-account@tu-project.iam.gserviceaccount.com
+FIRESTORE_COLLECTION_NAME=rsvps
 
 # Opcional: Para envío de emails
 # SENDGRID_API_KEY=your-sendgrid-api-key
 # FROM_EMAIL=noreply@yourdomain.com
 ```
+
+**💡 Nota:** Extrae los valores del archivo JSON descargado:
+- `GOOGLE_CLOUD_PROJECT_ID` → `project_id`
+- `GOOGLE_CLOUD_PRIVATE_KEY` → `private_key` (mantén el formato con `\n`)
+- `GOOGLE_CLOUD_CLIENT_EMAIL` → `client_email`
 
 ### 4. Agregar Imágenes
 
@@ -79,10 +90,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 1. Crea una cuenta en [Vercel](https://vercel.com)
 2. Conecta tu repositorio de GitHub
 3. Configura las variables de entorno en Vercel:
-   - `COSMOS_ENDPOINT`
-   - `COSMOS_KEY`
-   - `COSMOS_DATABASE_NAME`
-   - `COSMOS_CONTAINER_NAME`
+   - `GOOGLE_CLOUD_PROJECT_ID`
+   - `GOOGLE_CLOUD_PRIVATE_KEY`
+   - `GOOGLE_CLOUD_CLIENT_EMAIL`
+   - `FIRESTORE_COLLECTION_NAME`
 4. ¡Deploy automático! 🚀
 
 ### Deploy Manual

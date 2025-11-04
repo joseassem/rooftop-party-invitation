@@ -4,10 +4,10 @@ import eventConfig from '@/event-config.json'
 // Endpoint para obtener estadísticas del evento
 export async function GET(request: NextRequest) {
   try {
-    const hasCosmosConfig = process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY
+    const hasFirestoreConfig = process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL
 
-    if (hasCosmosConfig) {
-      const { getEventStats } = await import('@/lib/cosmosdb')
+    if (hasFirestoreConfig) {
+      const { getEventStats } = await import('@/lib/firestore')
       const stats = await getEventStats(eventConfig.event.id)
 
       return NextResponse.json({
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
           confirmed: 0,
           cancelled: 0
         },
-        note: 'Modo Demo: Configura Azure Cosmos DB para estadísticas reales'
+        note: 'Modo Demo: Configura Google Cloud Firestore para estadísticas reales'
       })
     }
   } catch (error) {

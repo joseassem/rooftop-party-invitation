@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar si Cosmos DB está configurado
-    const hasCosmosConfig = process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY
+    // Verificar si Google Cloud Firestore está configurado
+    const hasFirestoreConfig = process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL
 
-    if (hasCosmosConfig) {
-      // Usar Cosmos DB real
-      const { saveRSVP } = await import('@/lib/cosmosdb')
+    if (hasFirestoreConfig) {
+      // Usar Google Cloud Firestore real
+      const { saveRSVP } = await import('@/lib/firestore')
       
       const rsvp = await saveRSVP({
         name,
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       )
     } else {
       // Modo demo - guardar en memoria
-      console.log('⚠️  Modo DEMO - Configura Azure Cosmos DB para producción')
+      console.log('⚠️  Modo DEMO - Configura Google Cloud Firestore para producción')
       
       const mockRsvp = {
         id: `demo-${Date.now()}`,
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           success: true,
           message: '¡RSVP confirmado!',
           rsvp: mockRsvp,
-          note: 'Modo Demo: Configura Azure Cosmos DB en .env.local para guardar datos permanentemente'
+          note: 'Modo Demo: Configura Google Cloud Firestore en .env.local para guardar datos permanentemente'
         },
         { status: 201 }
       )
@@ -95,10 +95,10 @@ export async function POST(request: NextRequest) {
 // Endpoint para obtener todos los RSVPs
 export async function GET(request: NextRequest) {
   try {
-    const hasCosmosConfig = process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY
+    const hasFirestoreConfig = process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL
 
-    if (hasCosmosConfig) {
-      const { getRSVPsByEvent } = await import('@/lib/cosmosdb')
+    if (hasFirestoreConfig) {
+      const { getRSVPsByEvent } = await import('@/lib/firestore')
       const rsvps = await getRSVPsByEvent(eventConfig.event.id)
 
       return NextResponse.json({

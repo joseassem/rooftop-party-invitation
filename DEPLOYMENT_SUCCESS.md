@@ -14,13 +14,13 @@
 
 ✅ **Código en GitHub** - Repositorio creado exitosamente
 ✅ **Deploy en Vercel** - Aplicación desplegada
-✅ **Modo Demo** - La app funciona sin Azure Cosmos DB configurado
+✅ **Modo Demo** - La app funciona sin Google Cloud Firestore configurado
 ✅ **Responsive Design** - Funciona en mobile, tablet y desktop
 ✅ **Formulario RSVP** - Modal funcional (guarda temporalmente)
 
 ---
 
-## ⚠️ SIGUIENTE PASO: Configurar Azure Cosmos DB
+## ⚠️ SIGUIENTE PASO: Configurar Google Cloud Firestore
 
 ### ¿Por qué necesitas esto?
 
@@ -29,53 +29,73 @@ Actualmente tu app funciona en **modo demo**:
 - ✅ El formulario funciona
 - ⚠️ **PERO:** Los RSVPs solo se guardan en memoria temporal (se pierden al reiniciar)
 
-Para **guardar los RSVPs permanentemente**, necesitas Azure Cosmos DB.
+Para **guardar los RSVPs permanentemente**, necesitas Google Cloud Firestore.
 
 ---
 
-## 🔧 Configurar Azure Cosmos DB (15 minutos)
+## 🔧 Configurar Google Cloud Firestore (15 minutos)
 
-### Paso 1: Crear cuenta Azure Cosmos DB
+### Paso 1: Crear proyecto en Google Cloud
 
-1. **Ve a:** https://portal.azure.com
-2. **Click:** "Create a resource"
-3. **Busca:** "Azure Cosmos DB"
-4. **Selecciona:** "Azure Cosmos DB for NoSQL"
-5. **Configura:**
-   - Subscription: Tu suscripción
-   - Resource Group: Crear nuevo "rooftop-party-rg"
-   - Account Name: "rooftop-party-db" (o el que quieras)
-   - Location: "East US" (o más cercano)
-   - Capacity mode: **Serverless** ⭐ (importante para costo bajo)
-6. **Click:** "Review + Create" → "Create"
-7. **Espera:** 5-10 minutos mientras se crea
+1. **Ve a:** https://console.cloud.google.com
+2. **Click:** "Select a project" → "New Project"
+3. **Nombre:** "rooftop-party-app" (o el que prefieras)
+4. **Click:** "Create"
+5. **Espera:** 30 segundos mientras se crea
 
-### Paso 2: Obtener Credenciales
+### Paso 2: Habilitar Firestore
 
-1. **Abre tu cuenta** de Cosmos DB en el portal
-2. **Ve a:** Menú lateral → "Keys"
-3. **Copia:**
-   - URI (COSMOS_ENDPOINT)
-   - PRIMARY KEY (COSMOS_KEY)
+1. **En el proyecto**, busca "Firestore" en la barra de búsqueda
+2. **Click:** "Cloud Firestore"
+3. **Click:** "Create Database"
+4. **Configura:**
+   - Mode: **Native mode**
+   - Location: Selecciona tu región (ejemplo: `us-central1`)
+   - Security rules: **Start in production mode**
+5. **Click:** "Create"
+6. **Espera:** 1-2 minutos mientras se crea
 
-### Paso 3: Agregar Variables de Entorno en Vercel
+### Paso 3: Crear Service Account
+
+1. **Ve a:** Menú lateral → IAM & Admin → Service Accounts
+2. **Click:** "Create Service Account"
+3. **Nombre:** `rooftop-party-app`
+4. **Description:** "Service account para app de invitaciones"
+5. **Click:** "Create and Continue"
+6. **Role:** Busca y selecciona **"Cloud Datastore User"**
+7. **Click:** "Continue" → "Done"
+
+### Paso 4: Generar Clave JSON
+
+1. **En la lista de Service Accounts**, encuentra la que acabas de crear
+2. **Click** en los 3 puntos (⋮) → "Manage Keys"
+3. **Click:** "Add Key" → "Create new key"
+4. **Tipo:** JSON
+5. **Click:** "Create"
+6. **Se descarga** un archivo JSON - ¡guárdalo en lugar seguro!
+
+### Paso 5: Agregar Variables de Entorno en Vercel
 
 #### Opción A: Desde el Dashboard (Recomendado)
 
 1. **Ve a:** https://vercel.com/brainergys-projects/rooftop-party-invitation/settings/environment-variables
 
-2. **Agrega estas 4 variables:**
+2. **Abre el archivo JSON** descargado y extrae estos valores:
 
-   | Name | Value |
-   |------|-------|
-   | `COSMOS_ENDPOINT` | Tu URI de Cosmos DB |
-   | `COSMOS_KEY` | Tu PRIMARY KEY |
-   | `COSMOS_DATABASE_NAME` | `rooftop-party-db` |
-   | `COSMOS_CONTAINER_NAME` | `rsvps` |
+3. **Agrega estas 4 variables:**
 
-3. **Importante:** Selecciona todos los ambientes (Production, Preview, Development)
+   | Name | Value | Ejemplo |
+   |------|-------|---------|
+   | `GOOGLE_CLOUD_PROJECT_ID` | `project_id` del JSON | `rooftop-party-app-123456` |
+   | `GOOGLE_CLOUD_PRIVATE_KEY` | `private_key` del JSON (completo con `\n`) | `"-----BEGIN PRIVATE KEY-----\n...` |
+   | `GOOGLE_CLOUD_CLIENT_EMAIL` | `client_email` del JSON | `rooftop-party-app@...iam.gserviceaccount.com` |
+   | `FIRESTORE_COLLECTION_NAME` | `rsvps` | `rsvps` |
 
-4. **Click:** "Save"
+4. **Importante:** 
+   - Selecciona todos los ambientes (Production, Preview, Development)
+   - La `PRIVATE_KEY` debe incluir las comillas y los `\n`
+
+5. **Click:** "Save"
 
 #### Opción B: Desde la Terminal
 
@@ -83,11 +103,17 @@ Para **guardar los RSVPs permanentemente**, necesitas Azure Cosmos DB.
 cd "c:\Users\josea\OneDrive\Documents\TimeKast\Rooftop Party"
 
 # Agregar variables
-vercel env add COSMOS_ENDPOINT
-# Pega tu URI cuando te lo pida
+vercel env add GOOGLE_CLOUD_PROJECT_ID
+# Pega el project_id cuando te lo pida
 
-vercel env add COSMOS_KEY
-# Pega tu PRIMARY KEY
+vercel env add GOOGLE_CLOUD_PRIVATE_KEY
+# Pega la private_key (con comillas y \n)
+
+vercel env add GOOGLE_CLOUD_CLIENT_EMAIL
+# Pega el client_email
+
+vercel env add FIRESTORE_COLLECTION_NAME
+# Escribe: rsvps
 
 vercel env add COSMOS_DATABASE_NAME
 # Escribe: rooftop-party-db
