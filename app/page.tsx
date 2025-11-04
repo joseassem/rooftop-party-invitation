@@ -74,6 +74,22 @@ export default function Home() {
           <div className={styles.infoItem}>
             <span className={styles.infoText}>{event.details}</span>
           </div>
+
+          {event.price && (
+            <div className={styles.infoItem}>
+              <span className={styles.infoText} style={{ color: theme.accentColor, fontWeight: 'bold' }}>
+                {event.price}
+              </span>
+            </div>
+          )}
+
+          {event.capacity && (
+            <div className={styles.infoItem}>
+              <span className={styles.infoText} style={{ color: theme.secondaryColor }}>
+                {event.capacity}
+              </span>
+            </div>
+          )}
         </motion.div>
 
         {/* RSVP Section */}

@@ -7,6 +7,8 @@
     "time": "DESDE LAS 5:00 PM",
     "location": "HAMBURGO 108, ZONA ROSA",
     "details": "🍺 💧 Chelas y Aguas Incluidas!",
+    "price": "💵 Cuota de recuperación: $250 MXN",
+    "capacity": "⚠️ Cupo limitado",
     "rsvpRequired": true,
     "rsvpUrl": "https://go.timekast.mx/andrreas",
     "backgroundImage": "/background.png",
