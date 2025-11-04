@@ -98,15 +98,23 @@ export async function getRSVPsByEvent(eventId: string) {
   try {
     const collection = db.collection(collectionName)
     
+    // Query sin orderBy para evitar error de índice compuesto
     const snapshot = await collection
       .where('eventId', '==', eventId)
-      .orderBy('createdAt', 'desc')
       .get()
 
+    // Ordenar en memoria después de obtener los datos
     const rsvps = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     })) as RSVP[]
+
+    // Ordenar por fecha de creación (más reciente primero)
+    rsvps.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime()
+      const dateB = new Date(b.createdAt).getTime()
+      return dateB - dateA // Orden descendente
+    })
 
     return rsvps
   } catch (error) {
