@@ -10,13 +10,25 @@ if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_CLOUD_PRIVATE_KE
 
 // Inicializar Firebase Admin SDK (singleton)
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-      privateKey: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      clientEmail: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-    }),
-  })
+  try {
+    const privateKey = process.env.GOOGLE_CLOUD_PRIVATE_KEY
+    // Manejar tanto \\n como \n en la private key
+    const formattedKey = privateKey?.includes('\\n') 
+      ? privateKey.replace(/\\n/g, '\n')
+      : privateKey
+    
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+        privateKey: formattedKey,
+        clientEmail: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+      }),
+    })
+    console.log('✅ Firebase Admin SDK initialized successfully')
+  } catch (error) {
+    console.error('❌ Error initializing Firebase Admin SDK:', error)
+    throw error
+  }
 }
 
 const db = admin.firestore()
