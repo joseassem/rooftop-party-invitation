@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
 
     // Generar token de cancelación
     const cancelToken = generateCancelToken(rsvpId, email)
-    const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cancel/${rsvpId}?token=${cancelToken}`
+    let cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cancel/${rsvpId}?token=${cancelToken}`
+    
+    // Limpiar cualquier = que pueda estar al inicio (bug de encoding en emails)
+    cancelUrl = cancelUrl.replace(/^=+/, '').trim()
 
     // Generar HTML del email
     const htmlContent = generateConfirmationEmail({

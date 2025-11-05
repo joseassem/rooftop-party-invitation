@@ -8,6 +8,9 @@ interface EmailTemplateProps {
 
 export function generateConfirmationEmail({ name, plusOne, cancelUrl }: EmailTemplateProps): string {
   const { event, theme } = eventConfig
+  
+  // Limpiar cualquier = al inicio de la URL (bug de encoding)
+  const cleanCancelUrl = cancelUrl.replace(/^=+/, '').trim()
 
   return `
 <!DOCTYPE html>
@@ -84,14 +87,14 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl }: EmailTem
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0 0 20px 0;">
                 <tr>
                   <td align="center" style="padding: 0;">
-                    <a href="${cancelUrl}" target="_blank" style="background-color:#dc2626;border:2px solid #dc2626;border-radius:6px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:16px;font-weight:600;line-height:50px;text-align:center;text-decoration:none;width:250px;-webkit-text-size-adjust:none;">Cancelar mi asistencia</a>
+                    <a href="${cleanCancelUrl}" target="_blank" style="background-color:#dc2626;border:2px solid #dc2626;border-radius:6px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:16px;font-weight:600;line-height:50px;text-align:center;text-decoration:none;width:250px;-webkit-text-size-adjust:none;">Cancelar mi asistencia</a>
                   </td>
                 </tr>
               </table>
               
               <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 1.6; color: #999999; text-align: center;">
                 O copia y pega este enlace en tu navegador:<br>
-                <span style="color:#dc2626;word-break:break-all;font-size:11px;">${cancelUrl}</span>
+                <span style="color:#dc2626;word-break:break-all;font-size:11px;">${cleanCancelUrl}</span>
               </p>
             </td>
           </tr>
