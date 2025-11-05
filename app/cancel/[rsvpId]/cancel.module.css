@@ -116,7 +116,7 @@
 .checkboxLabel {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
   cursor: pointer;
   user-select: none;
 }
@@ -126,6 +126,7 @@
   height: 20px;
   cursor: pointer;
   flex-shrink: 0;
+  margin-right: 5px;
 }
 
 .checkboxLabel input[type="checkbox"]:disabled {

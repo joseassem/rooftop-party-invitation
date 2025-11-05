@@ -84,14 +84,14 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl }: EmailTem
               </table>
 
               <p style="margin: 0 0 30px 0; font-size: 14px; line-height: 1.6; color: #777777;">
-                Si tus planes cambian y no puedes asistir, puedes cancelar tu RSVP haciendo clic en el botón de abajo:
+                Si necesitas modificar tus datos o cancelar tu asistencia, haz clic en el botón de abajo:
               </p>
 
               <!-- Botón de cancelación -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0 0 20px 0;">
                 <tr>
                   <td align="center" style="padding: 0;">
-                    <a href="${cleanCancelUrl}" target="_blank" style="background-color:#dc2626;border:2px solid #dc2626;border-radius:6px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:16px;font-weight:600;line-height:50px;text-align:center;text-decoration:none;width:250px;-webkit-text-size-adjust:none;">Cancelar mi asistencia</a>
+                    <a href="${cleanCancelUrl}" target="_blank" style="background-color:#667eea;border:2px solid #667eea;border-radius:6px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:16px;font-weight:600;line-height:50px;text-align:center;text-decoration:none;width:280px;-webkit-text-size-adjust:none;">Modificar o Cancelar</a>
                   </td>
                 </tr>
               </table>
