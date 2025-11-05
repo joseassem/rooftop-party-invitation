@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: `Rooftop Party <${FROM_EMAIL}>`,
       to: email,
       subject: `Confirmación - ${eventConfig.event.title}`,
       html: htmlContent
