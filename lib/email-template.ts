@@ -54,31 +54,86 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl }: EmailTem
               </p>
 
               <!-- Detalles del evento -->
-              <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f9f9f9; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+              <table role="presentation" style="width: 100%; border-collapse: separate; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                 <tr>
-                  <td style="padding: 10px;">
-                    <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
-                      <strong style="color: ${theme.primaryColor};">📅 Fecha:</strong> ${event.date}
-                    </p>
-                    <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
-                      <strong style="color: ${theme.primaryColor};">🕔 Hora:</strong> ${event.time}
-                    </p>
-                    <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
-                      <strong style="color: ${theme.primaryColor};">📍 Lugar:</strong> ${event.location}
-                    </p>
+                  <td style="padding: 24px;">
+                    
+                    <!-- Fecha -->
+                    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top; padding-right: 12px;">
+                          <div style="width: 36px; height: 36px; background-color: ${theme.primaryColor}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📅</div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Fecha</p>
+                          <p style="margin: 4px 0 0 0; font-size: 16px; color: #111827; font-weight: 600;">${event.date}</p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Hora -->
+                    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top; padding-right: 12px;">
+                          <div style="width: 36px; height: 36px; background-color: ${theme.primaryColor}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🕔</div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Hora</p>
+                          <p style="margin: 4px 0 0 0; font-size: 16px; color: #111827; font-weight: 600;">${event.time}</p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Lugar -->
+                    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top; padding-right: 12px;">
+                          <div style="width: 36px; height: 36px; background-color: ${theme.primaryColor}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📍</div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Lugar</p>
+                          <p style="margin: 4px 0 0 0; font-size: 16px; color: #111827; font-weight: 600;">${event.location}</p>
+                        </td>
+                      </tr>
+                    </table>
+
                     ${event.price ? `
-                    <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
-                      <strong style="color: #047857;">${event.price}</strong>
-                    </p>
+                    <!-- Precio -->
+                    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top; padding-right: 12px;">
+                          <div style="width: 36px; height: 36px; background-color: #047857; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">💵</div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Inversión</p>
+                          <p style="margin: 4px 0 0 0; font-size: 16px; color: #047857; font-weight: 700;">${event.price}</p>
+                        </td>
+                      </tr>
+                    </table>
                     ` : ''}
+
                     ${plusOne ? `
-                    <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
-                      <strong style="color: #059669;">👥 +1:</strong> Confirmado
-                    </p>
+                    <!-- +1 -->
+                    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top; padding-right: 12px;">
+                          <div style="width: 36px; height: 36px; background-color: #059669; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👥</div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Acompañante</p>
+                          <p style="margin: 4px 0 0 0; font-size: 16px; color: #059669; font-weight: 700;">✓ Confirmado</p>
+                        </td>
+                      </tr>
+                    </table>
                     ` : ''}
-                    <p style="margin: 0; font-size: 16px; color: #333;">
-                      ${event.details.split('\n').join('<br>')}
-                    </p>
+
+                    <!-- Detalles adicionales -->
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6;">
+                        ${event.details.split('\n').join('<br>')}
+                      </p>
+                    </div>
+
                   </td>
                 </tr>
               </table>
