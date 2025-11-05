@@ -45,8 +45,12 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl }: EmailTem
                 ¡Hola <strong>${name}</strong>!
               </p>
               
+              <p style="margin: 0 0 10px 0; font-size: 16px; line-height: 1.6; color: #555555;">
+                Tu asistencia ha sido confirmada para <strong>${event.title}</strong>.
+              </p>
+              
               <p style="margin: 0 0 30px 0; font-size: 16px; line-height: 1.6; color: #555555;">
-                Tu asistencia ha sido confirmada para <strong>${event.title}</strong>. ¡Nos vemos ahí! 🎉
+                ¡Nos vemos ahí! 🎉
               </p>
 
               <!-- Detalles del evento -->
@@ -64,7 +68,7 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl }: EmailTem
                     </p>
                     ${event.price ? `
                     <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
-                      <strong style="color: #dc2626;">${event.price}</strong>
+                      <strong style="color: #047857;">${event.price}</strong>
                     </p>
                     ` : ''}
                     ${plusOne ? `

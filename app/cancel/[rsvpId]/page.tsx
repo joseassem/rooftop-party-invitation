@@ -193,7 +193,7 @@ export default function CancelPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1>Gestionar Asistencia</h1>
+        <h1>Modificar o Cancelar Asistencia</h1>
         
         <div className={styles.eventInfo}>
           <h2>{eventConfig.event.title}</h2>
