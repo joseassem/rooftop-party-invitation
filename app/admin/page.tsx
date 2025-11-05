@@ -51,17 +51,11 @@ export default function AdminDashboard() {
         return
       }
 
-      const response = await fetch('/api/rsvp', {
-        headers: {
-          'Authorization': `Basic ${authHeader}`
-        }
-      })
+      // Cargar RSVPs desde la API
+      const response = await fetch('/api/rsvp')
 
-      if (response.status === 401) {
-        setIsAuthenticated(false)
-        sessionStorage.removeItem('admin_auth')
-        setMessage('Credenciales inválidas')
-        return
+      if (!response.ok) {
+        throw new Error('Error al cargar RSVPs')
       }
 
       const data = await response.json()
