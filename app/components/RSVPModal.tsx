@@ -153,6 +153,8 @@ export default function RSVPModal({ isOpen, onClose }: RSVPModalProps) {
                 countrySelectorStyleProps={{
                   buttonClassName: styles.countrySelector
                 }}
+                disableDialCodePrefill={false}
+                forceDialCode={true}
               />
             </div>
 

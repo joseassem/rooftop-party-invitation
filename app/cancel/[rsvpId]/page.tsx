@@ -268,6 +268,8 @@ export default function CancelPage() {
               countrySelectorStyleProps={{
                 buttonClassName: styles.countrySelector
               }}
+              disableDialCodePrefill={false}
+              forceDialCode={true}
             />
           </div>
 
