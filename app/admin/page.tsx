@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'confirmed' | 'cancelled'>('all')
   const [filterPlusOne, setFilterPlusOne] = useState<'all' | 'yes' | 'no'>('all')
+  const [filterEmail, setFilterEmail] = useState<'all' | 'sent' | 'not-sent'>('all')
   const [message, setMessage] = useState('')
 
   // Autenticación
@@ -107,6 +108,13 @@ export default function AdminDashboard() {
       filtered = filtered.filter(r => !r.plusOne)
     }
 
+    // Filtro por email enviado
+    if (filterEmail === 'sent') {
+      filtered = filtered.filter(r => r.emailSent)
+    } else if (filterEmail === 'not-sent') {
+      filtered = filtered.filter(r => !r.emailSent)
+    }
+
     // Búsqueda por texto
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
@@ -118,7 +126,7 @@ export default function AdminDashboard() {
     }
 
     setFilteredRsvps(filtered)
-  }, [rsvps, filterStatus, filterPlusOne, searchTerm])
+  }, [rsvps, filterStatus, filterPlusOne, filterEmail, searchTerm])
 
   // Enviar email individual
   const sendEmail = async (rsvp: RSVP) => {
@@ -163,16 +171,28 @@ export default function AdminDashboard() {
 
   // Enviar emails masivos
   const sendBulkEmails = async () => {
-    if (!confirm(`¿Enviar emails a ${filteredRsvps.length} personas?`)) {
+    const count = filteredRsvps.length
+    if (count === 0) {
+      setMessage('❌ No hay RSVPs para enviar')
+      return
+    }
+
+    const notSentCount = filteredRsvps.filter(r => !r.emailSent).length
+    const confirmMessage = notSentCount > 0
+      ? `¿Enviar emails a ${count} personas? (${notSentCount} sin email previo)`
+      : `¿Enviar emails a ${count} personas? (Todos ya recibieron email antes)`
+    
+    if (!confirm(confirmMessage)) {
       return
     }
 
     setLoading(true)
-    setMessage('Enviando emails masivos...')
+    setMessage('Enviando emails...')
     
     try {
       const authHeader = sessionStorage.getItem('admin_auth')
       
+      // Enviar lista de IDs específicos de los RSVPs filtrados
       const response = await fetch('/api/admin/send-bulk-email', {
         method: 'POST',
         headers: {
@@ -180,7 +200,7 @@ export default function AdminDashboard() {
           'Authorization': `Basic ${authHeader}`
         },
         body: JSON.stringify({
-          filterStatus
+          rsvpIds: filteredRsvps.map(r => r.id)
         })
       })
 
@@ -297,14 +317,20 @@ export default function AdminDashboard() {
 
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
           <option value="all">Todos los estados</option>
-          <option value="confirmed">Confirmados</option>
-          <option value="cancelled">Cancelados</option>
+          <option value="confirmed">✅ Confirmados</option>
+          <option value="cancelled">❌ Cancelados</option>
         </select>
 
         <select value={filterPlusOne} onChange={(e) => setFilterPlusOne(e.target.value as any)}>
           <option value="all">Todos los +1</option>
-          <option value="yes">Con +1</option>
-          <option value="no">Sin +1</option>
+          <option value="yes">👥 Con +1</option>
+          <option value="no">👤 Sin +1</option>
+        </select>
+
+        <select value={filterEmail} onChange={(e) => setFilterEmail(e.target.value as any)} className={styles.emailFilter}>
+          <option value="all">Todos los emails</option>
+          <option value="sent">✉️ Email enviado</option>
+          <option value="not-sent">📭 Sin email</option>
         </select>
 
         <button
@@ -312,7 +338,7 @@ export default function AdminDashboard() {
           disabled={loading || filteredRsvps.length === 0}
           className={styles.bulkBtn}
         >
-          📧 Enviar a Todos ({filteredRsvps.length})
+          📧 Enviar a Filtrados ({filteredRsvps.length})
         </button>
       </div>
 

@@ -175,6 +175,21 @@
   cursor: pointer;
 }
 
+.controls select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.emailFilter {
+  border-color: #10b981 !important;
+  background: #f0fdf4 !important;
+  font-weight: 600;
+}
+
+.emailFilter:focus {
+  border-color: #059669 !important;
+}
+
 .bulkBtn {
   padding: 10px 20px;
   background: #667eea;

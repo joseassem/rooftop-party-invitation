@@ -13,15 +13,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { filterStatus } = body // 'all', 'confirmed', 'cancelled'
+    const { rsvpIds } = body // Array de IDs específicos a enviar
+
+    if (!rsvpIds || !Array.isArray(rsvpIds) || rsvpIds.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Debe proporcionar una lista de IDs'
+      }, { status: 400 })
+    }
 
     // Obtener todos los RSVPs del evento
-    const rsvps = await getRSVPsByEvent(eventConfig.event.id)
+    const allRsvps = await getRSVPsByEvent(eventConfig.event.id)
 
-    // Filtrar según status
-    const filteredRsvps = filterStatus && filterStatus !== 'all'
-      ? rsvps.filter(r => r.status === filterStatus)
-      : rsvps
+    // Filtrar solo los RSVPs con los IDs especificados
+    const filteredRsvps = allRsvps.filter(r => rsvpIds.includes(r.id))
 
     if (filteredRsvps.length === 0) {
       return NextResponse.json({
