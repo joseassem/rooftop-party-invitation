@@ -163,8 +163,10 @@ export async function getEventStats(eventId: string) {
 
 // Función para generar token de cancelación único
 export function generateCancelToken(rsvpId: string, email: string): string {
+  const crypto = require('crypto')
   const data = `${rsvpId}-${email}-${process.env.CANCEL_TOKEN_SECRET || 'default-secret'}`
-  return Buffer.from(data).toString('base64url')
+  // Usar hash SHA256 truncado a 32 caracteres para URL más corta
+  return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32)
 }
 
 // Función para validar token de cancelación
