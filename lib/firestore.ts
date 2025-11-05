@@ -57,6 +57,12 @@ export interface RSVP {
   eventId: string
   createdAt: string
   status: 'confirmed' | 'cancelled'
+  emailSent?: string // timestamp del último email enviado
+  emailHistory?: Array<{
+    sentAt: string
+    type: 'confirmation' | 'reminder'
+  }>
+  cancelToken?: string // token único para cancelar desde email
 }
 
 // Función para guardar un RSVP
@@ -84,9 +90,14 @@ export async function saveRSVP(rsvp: Omit<RSVP, 'id' | 'createdAt' | 'status'>) 
 
     const docRef = await collection.add(newRsvp)
     
+    // Generar y guardar token de cancelación
+    const cancelToken = generateCancelToken(docRef.id, rsvp.email)
+    await docRef.update({ cancelToken })
+    
     return {
       id: docRef.id,
       ...newRsvp,
+      cancelToken,
     }
   } catch (error) {
     console.error('Error al guardar RSVP:', error)
@@ -150,4 +161,82 @@ export async function getEventStats(eventId: string) {
   }
 }
 
+// Función para generar token de cancelación único
+export function generateCancelToken(rsvpId: string, email: string): string {
+  const data = `${rsvpId}-${email}-${process.env.CANCEL_TOKEN_SECRET || 'default-secret'}`
+  return Buffer.from(data).toString('base64url')
+}
+
+// Función para validar token de cancelación
+export function validateCancelToken(token: string, rsvpId: string, email: string): boolean {
+  const expectedToken = generateCancelToken(rsvpId, email)
+  return token === expectedToken
+}
+
+// Función para registrar envío de email
+export async function recordEmailSent(rsvpId: string, type: 'confirmation' | 'reminder') {
+  try {
+    const docRef = db.collection(collectionName).doc(rsvpId)
+    const doc = await docRef.get()
+    
+    if (!doc.exists) {
+      throw new Error('RSVP no encontrado')
+    }
+
+    const currentHistory = (doc.data()?.emailHistory || []) as Array<{
+      sentAt: string
+      type: 'confirmation' | 'reminder'
+    }>
+
+    await docRef.update({
+      emailSent: new Date().toISOString(),
+      emailHistory: [
+        ...currentHistory,
+        {
+          sentAt: new Date().toISOString(),
+          type
+        }
+      ]
+    })
+
+    return true
+  } catch (error) {
+    console.error('Error al registrar envío de email:', error)
+    throw error
+  }
+}
+
+// Función para cancelar un RSVP
+export async function cancelRSVP(rsvpId: string, token: string) {
+  try {
+    const docRef = db.collection(collectionName).doc(rsvpId)
+    const doc = await docRef.get()
+    
+    if (!doc.exists) {
+      throw new Error('RSVP no encontrado')
+    }
+
+    const rsvp = doc.data() as RSVP
+    
+    // Validar token
+    if (!validateCancelToken(token, rsvpId, rsvp.email)) {
+      throw new Error('Token inválido')
+    }
+
+    await docRef.update({
+      status: 'cancelled'
+    })
+
+    return {
+      id: rsvpId,
+      ...rsvp,
+      status: 'cancelled' as const
+    }
+  } catch (error) {
+    console.error('Error al cancelar RSVP:', error)
+    throw error
+  }
+}
+
 export { db, collectionName }
+

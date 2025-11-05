@@ -1,0 +1,367 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import eventConfig from '@/event-config.json'
+import styles from './admin.module.css'
+
+interface RSVP {
+  id: string
+  name: string
+  email: string
+  phone: string
+  plusOne: boolean
+  createdAt: string
+  status: 'confirmed' | 'cancelled'
+  emailSent?: string
+}
+
+export default function AdminDashboard() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [rsvps, setRsvps] = useState<RSVP[]>([])
+  const [filteredRsvps, setFilteredRsvps] = useState<RSVP[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'confirmed' | 'cancelled'>('all')
+  const [filterPlusOne, setFilterPlusOne] = useState<'all' | 'yes' | 'no'>('all')
+  const [message, setMessage] = useState('')
+
+  // Autenticación
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Guardar credenciales en sessionStorage
+    const credentials = btoa(`${username}:${password}`)
+    sessionStorage.setItem('admin_auth', credentials)
+    
+    // Intentar cargar RSVPs
+    await loadRSVPs(credentials)
+  }
+
+  const loadRSVPs = async (credentials?: string) => {
+    setLoading(true)
+    try {
+      const authHeader = credentials || sessionStorage.getItem('admin_auth')
+      
+      if (!authHeader) {
+        setIsAuthenticated(false)
+        return
+      }
+
+      const response = await fetch('/api/rsvp', {
+        headers: {
+          'Authorization': `Basic ${authHeader}`
+        }
+      })
+
+      if (response.status === 401) {
+        setIsAuthenticated(false)
+        sessionStorage.removeItem('admin_auth')
+        setMessage('Credenciales inválidas')
+        return
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        setRsvps(data.rsvps)
+        setFilteredRsvps(data.rsvps)
+        setIsAuthenticated(true)
+      }
+    } catch (error) {
+      console.error('Error cargando RSVPs:', error)
+      setMessage('Error al cargar datos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Cargar RSVPs al montar
+  useEffect(() => {
+    loadRSVPs()
+  }, [])
+
+  // Filtrar RSVPs
+  useEffect(() => {
+    let filtered = [...rsvps]
+
+    // Filtro por status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(r => r.status === filterStatus)
+    }
+
+    // Filtro por +1
+    if (filterPlusOne === 'yes') {
+      filtered = filtered.filter(r => r.plusOne)
+    } else if (filterPlusOne === 'no') {
+      filtered = filtered.filter(r => !r.plusOne)
+    }
+
+    // Búsqueda por texto
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(r =>
+        r.name.toLowerCase().includes(term) ||
+        r.email.toLowerCase().includes(term) ||
+        r.phone.includes(term)
+      )
+    }
+
+    setFilteredRsvps(filtered)
+  }, [rsvps, filterStatus, filterPlusOne, searchTerm])
+
+  // Enviar email individual
+  const sendEmail = async (rsvp: RSVP) => {
+    setLoading(true)
+    setMessage('Enviando email...')
+    
+    try {
+      const authHeader = sessionStorage.getItem('admin_auth')
+      
+      const response = await fetch('/api/admin/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authHeader}`
+        },
+        body: JSON.stringify({
+          rsvpId: rsvp.id,
+          name: rsvp.name,
+          email: rsvp.email,
+          plusOne: rsvp.plusOne
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage(`✅ Email enviado a ${rsvp.name}`)
+        await loadRSVPs()
+      } else {
+        setMessage(`❌ Error: ${data.error}`)
+      }
+    } catch (error) {
+      setMessage('❌ Error al enviar email')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Enviar emails masivos
+  const sendBulkEmails = async () => {
+    if (!confirm(`¿Enviar emails a ${filteredRsvps.length} personas?`)) {
+      return
+    }
+
+    setLoading(true)
+    setMessage('Enviando emails masivos...')
+    
+    try {
+      const authHeader = sessionStorage.getItem('admin_auth')
+      
+      const response = await fetch('/api/admin/send-bulk-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authHeader}`
+        },
+        body: JSON.stringify({
+          filterStatus
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage(`✅ Enviados: ${data.sent} | ❌ Fallidos: ${data.failed}`)
+        await loadRSVPs()
+      } else {
+        setMessage(`❌ Error: ${data.error}`)
+      }
+    } catch (error) {
+      setMessage('❌ Error al enviar emails')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Cerrar sesión
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_auth')
+    setIsAuthenticated(false)
+    setUsername('')
+    setPassword('')
+  }
+
+  // Stats
+  const stats = {
+    total: rsvps.length,
+    confirmed: rsvps.filter(r => r.status === 'confirmed').length,
+    cancelled: rsvps.filter(r => r.status === 'cancelled').length,
+    plusOne: rsvps.filter(r => r.plusOne).length,
+    emailsSent: rsvps.filter(r => r.emailSent).length,
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className={styles.loginContainer}>
+        <div className={styles.loginBox}>
+          <h1>🔐 Admin Dashboard</h1>
+          <p>{eventConfig.event.title}</p>
+          
+          <form onSubmit={handleLogin} className={styles.loginForm}>
+            <input
+              type="text"
+              placeholder="Usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? 'Verificando...' : 'Iniciar Sesión'}
+            </button>
+          </form>
+
+          {message && <p className={styles.message}>{message}</p>}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.dashboard}>
+      <header className={styles.header}>
+        <div>
+          <h1>📊 Admin Dashboard</h1>
+          <p>{eventConfig.event.title}</p>
+        </div>
+        <button onClick={handleLogout} className={styles.logoutBtn}>
+          Cerrar Sesión
+        </button>
+      </header>
+
+      {/* Estadísticas */}
+      <div className={styles.stats}>
+        <div className={styles.statCard}>
+          <h3>{stats.total}</h3>
+          <p>Total RSVPs</p>
+        </div>
+        <div className={styles.statCard}>
+          <h3>{stats.confirmed}</h3>
+          <p>Confirmados</p>
+        </div>
+        <div className={styles.statCard}>
+          <h3>{stats.cancelled}</h3>
+          <p>Cancelados</p>
+        </div>
+        <div className={styles.statCard}>
+          <h3>{stats.plusOne}</h3>
+          <p>Con +1</p>
+        </div>
+        <div className={styles.statCard}>
+          <h3>{stats.emailsSent}</h3>
+          <p>Emails Enviados</p>
+        </div>
+      </div>
+
+      {/* Controles */}
+      <div className={styles.controls}>
+        <input
+          type="text"
+          placeholder="Buscar por nombre, email o teléfono..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={styles.searchInput}
+        />
+
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
+          <option value="all">Todos los estados</option>
+          <option value="confirmed">Confirmados</option>
+          <option value="cancelled">Cancelados</option>
+        </select>
+
+        <select value={filterPlusOne} onChange={(e) => setFilterPlusOne(e.target.value as any)}>
+          <option value="all">Todos los +1</option>
+          <option value="yes">Con +1</option>
+          <option value="no">Sin +1</option>
+        </select>
+
+        <button
+          onClick={sendBulkEmails}
+          disabled={loading || filteredRsvps.length === 0}
+          className={styles.bulkBtn}
+        >
+          📧 Enviar a Todos ({filteredRsvps.length})
+        </button>
+      </div>
+
+      {message && <div className={styles.message}>{message}</div>}
+
+      {/* Tabla de RSVPs */}
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>+1</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Email Enviado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRsvps.map((rsvp) => (
+              <tr key={rsvp.id}>
+                <td>{rsvp.name}</td>
+                <td>{rsvp.email}</td>
+                <td>{rsvp.phone}</td>
+                <td>{rsvp.plusOne ? '✅ Sí' : '❌ No'}</td>
+                <td>
+                  <span className={rsvp.status === 'confirmed' ? styles.confirmed : styles.cancelled}>
+                    {rsvp.status === 'confirmed' ? 'Confirmado' : 'Cancelado'}
+                  </span>
+                </td>
+                <td>{new Date(rsvp.createdAt).toLocaleDateString()}</td>
+                <td>
+                  {rsvp.emailSent ? (
+                    <span className={styles.emailSent}>
+                      ✅ {new Date(rsvp.emailSent).toLocaleDateString()}
+                    </span>
+                  ) : (
+                    <span className={styles.emailNotSent}>No enviado</span>
+                  )}
+                </td>
+                <td>
+                  <button
+                    onClick={() => sendEmail(rsvp)}
+                    disabled={loading}
+                    className={styles.sendBtn}
+                  >
+                    📧 Enviar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {filteredRsvps.length === 0 && (
+          <p className={styles.noData}>No hay RSVPs que coincidan con los filtros</p>
+        )}
+      </div>
+    </div>
+  )
+}

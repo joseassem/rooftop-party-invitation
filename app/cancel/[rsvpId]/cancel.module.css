@@ -1,0 +1,134 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.card h1 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 28px;
+}
+
+.iconSuccess {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.eventInfo {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.eventInfo h2 {
+  margin: 0 0 10px 0;
+  color: #667eea;
+  font-size: 24px;
+}
+
+.eventInfo p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.warning {
+  color: #d97706;
+  font-weight: 600;
+  margin: 20px 0;
+  padding: 12px;
+  background: #fef3c7;
+  border-radius: 8px;
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 600;
+  margin: 20px 0;
+  padding: 12px;
+  background: #fee2e2;
+  border-radius: 8px;
+}
+
+.cancelBtn {
+  width: 100%;
+  padding: 14px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-bottom: 15px;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.cancelBtn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.homeBtn {
+  display: inline-block;
+  padding: 14px 30px;
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.3s;
+  margin-top: 10px;
+}
+
+.homeBtn:hover {
+  background: #5568d3;
+}
+
+.backLink {
+  display: block;
+  margin-top: 15px;
+  color: #667eea;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.subtext {
+  color: #666;
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 30px 20px;
+  }
+
+  .card h1 {
+    font-size: 24px;
+  }
+}
