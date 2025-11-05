@@ -37,20 +37,14 @@ export default function AdminDashboard() {
     const credentials = btoa(`${username}:${password}`)
     sessionStorage.setItem('admin_auth', credentials)
     
-    // Intentar cargar RSVPs
-    await loadRSVPs(credentials)
+    // Marcar como autenticado y cargar RSVPs
+    setIsAuthenticated(true)
+    await loadRSVPs()
   }
 
-  const loadRSVPs = async (credentials?: string) => {
+  const loadRSVPs = async () => {
     setLoading(true)
     try {
-      const authHeader = credentials || sessionStorage.getItem('admin_auth')
-      
-      if (!authHeader) {
-        setIsAuthenticated(false)
-        return
-      }
-
       // Cargar RSVPs desde la API
       const response = await fetch('/api/rsvp')
 
@@ -63,7 +57,6 @@ export default function AdminDashboard() {
       if (data.success) {
         setRsvps(data.rsvps)
         setFilteredRsvps(data.rsvps)
-        setIsAuthenticated(true)
       }
     } catch (error) {
       console.error('Error cargando RSVPs:', error)
@@ -73,9 +66,13 @@ export default function AdminDashboard() {
     }
   }
 
-  // Cargar RSVPs al montar
+  // Cargar RSVPs al montar si hay sesión
   useEffect(() => {
-    loadRSVPs()
+    const authHeader = sessionStorage.getItem('admin_auth')
+    if (authHeader) {
+      setIsAuthenticated(true)
+      loadRSVPs()
+    }
   }, [])
 
   // Filtrar RSVPs
