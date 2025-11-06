@@ -32,9 +32,8 @@ export default function AdminDashboard() {
   const [displayFilterPlusOne, setDisplayFilterPlusOne] = useState<'all' | 'yes' | 'no'>('all')
   const [displayFilterEmail, setDisplayFilterEmail] = useState<'all' | 'sent' | 'not-sent'>('all')
   
-  // Filtros para ENVIAR emails
-  const [emailFilterStatus, setEmailFilterStatus] = useState<'all' | 'confirmed' | 'cancelled'>('all')
-  const [emailFilterPlusOne, setEmailFilterPlusOne] = useState<'all' | 'yes' | 'no'>('all')
+  // Filtros para ENVIAR emails (default: solo confirmados sin email)
+  const [emailFilterStatus, setEmailFilterStatus] = useState<'all' | 'confirmed' | 'cancelled'>('confirmed')
   const [emailFilterEmail, setEmailFilterEmail] = useState<'all' | 'sent' | 'not-sent'>('not-sent')
   
   const [message, setMessage] = useState('')
@@ -155,13 +154,6 @@ export default function AdminDashboard() {
       filtered = filtered.filter(r => r.status === emailFilterStatus)
     }
 
-    // Filtro por +1
-    if (emailFilterPlusOne === 'yes') {
-      filtered = filtered.filter(r => r.plusOne)
-    } else if (emailFilterPlusOne === 'no') {
-      filtered = filtered.filter(r => !r.plusOne)
-    }
-
     // Filtro por email enviado
     if (emailFilterEmail === 'sent') {
       filtered = filtered.filter(r => r.emailSent)
@@ -170,7 +162,7 @@ export default function AdminDashboard() {
     }
 
     setEmailTargetRsvps(filtered)
-  }, [rsvps, emailFilterStatus, emailFilterPlusOne, emailFilterEmail])
+  }, [rsvps, emailFilterStatus, emailFilterEmail])
 
   // Enviar email individual
   const sendEmail = async (rsvp: RSVP) => {
@@ -377,7 +369,7 @@ export default function AdminDashboard() {
             </select>
 
             <select value={displayFilterPlusOne} onChange={(e) => setDisplayFilterPlusOne(e.target.value as any)}>
-              <option value="all">Todos los +1</option>
+              <option value="all">Todos</option>
               <option value="yes">👥 Con +1</option>
               <option value="no">👤 Sin +1</option>
             </select>
@@ -397,12 +389,6 @@ export default function AdminDashboard() {
               <option value="all">Todos los estados</option>
               <option value="confirmed">✅ Confirmados</option>
               <option value="cancelled">❌ Cancelados</option>
-            </select>
-
-            <select value={emailFilterPlusOne} onChange={(e) => setEmailFilterPlusOne(e.target.value as any)}>
-              <option value="all">Todos los +1</option>
-              <option value="yes">👥 Con +1</option>
-              <option value="no">👤 Sin +1</option>
             </select>
 
             <select value={emailFilterEmail} onChange={(e) => setEmailFilterEmail(e.target.value as any)} className={styles.emailFilter}>
