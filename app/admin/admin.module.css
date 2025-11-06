@@ -410,15 +410,13 @@
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr auto;
     grid-template-rows: auto;
     gap: 6px 10px;
     grid-template-areas:
-      "name name name"
-      "email email email"
-      "phone phone phone"
-      "plusone status emailsent"
-      "date date date";
+      "name plusone"
+      "email phone"
+      "date emailsent";
   }
 
   .table tbody tr:hover {
@@ -448,7 +446,7 @@
     min-width: auto;
   }
 
-  /* Name - spans full width */
+  /* Name - left side */
   .nameCell {
     grid-area: name;
     font-size: 17px;
@@ -457,46 +455,57 @@
     padding-right: 50px; /* Space for action button */
   }
 
-  /* Email - spans full width */
+  /* PlusOne - right side of name, only shows if has +1 */
+  .plusOneCell {
+    grid-area: plusone;
+    font-size: 12px;
+    text-align: right;
+    padding-right: 50px; /* Space for action button */
+  }
+
+  /* Email - left side, as link */
   .emailCell {
     grid-area: email;
     font-size: 13px;
     color: #4b5563;
   }
 
-  /* Phone - spans full width */
+  .emailCell a {
+    color: #667eea;
+    text-decoration: none;
+  }
+
+  /* Phone - right side, as link */
   .phoneCell {
     grid-area: phone;
     font-size: 13px;
     color: #4b5563;
+    text-align: right;
   }
 
-  /* PlusOne - left column (3 columns layout) */
-  .plusOneCell {
-    grid-area: plusone;
-    font-size: 12px;
+  .phoneCell a {
+    color: #667eea;
+    text-decoration: none;
   }
 
-  /* Status - middle column (3 columns layout) */
+  /* Status - hidden in mobile */
   .statusCell {
-    grid-area: status;
-    font-size: 14px;
-    text-align: center;
+    display: none;
   }
 
-  /* Email Sent - right column (3 columns layout) */
+  /* Registration Date - left side with label */
+  .dateCell {
+    grid-area: date;
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  /* Email Sent - right side with label */
   .emailSentCell {
     grid-area: emailsent;
     font-size: 11px;
     color: #6b7280;
     text-align: right;
-  }
-
-  /* Registration Date - spans full width at bottom */
-  .dateCell {
-    grid-area: date;
-    font-size: 11px;
-    color: #9ca3af;
   }
 
   /* Adjust badge sizes for mobile */

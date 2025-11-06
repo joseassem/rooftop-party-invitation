@@ -439,30 +439,28 @@ export default function AdminDashboard() {
                       📧
                     </button>
                   </td>
-                  <td className={styles.emailSentCell}>
-                    {rsvp.emailSent ? (
-                      <span className={styles.emailSent}>
-                        ✉️ {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                      </span>
-                    ) : (
-                      <span className={styles.emailNotSent}>📭</span>
-                    )}
-                  </td>
                   <td className={styles.nameCell}>{rsvp.name}</td>
                   <td className={styles.plusOneCell}>
-                    {rsvp.plusOne ? (
-                      <span className={styles.plusOneBadge}>👥 +1</span>
-                    ) : (
-                      <span className={styles.noPlusOne}>—</span>
-                    )}
+                    {rsvp.plusOne && <span className={styles.plusOneBadge}>👥 +1</span>}
                   </td>
-                  <td className={styles.emailCell}>{rsvp.email}</td>
-                  <td className={styles.phoneCell}>{rsvp.phone}</td>
+                  <td className={styles.emailCell}>
+                    <a href={`mailto:${rsvp.email}`}>{rsvp.email}</a>
+                  </td>
+                  <td className={styles.phoneCell}>
+                    <a href={`tel:${rsvp.phone}`}>{rsvp.phone}</a>
+                  </td>
                   <td className={styles.statusCell}>
                     <span className={styles.confirmed}>✅</span>
                   </td>
                   <td className={styles.dateCell}>
-                    📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                    Registro: {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                  </td>
+                  <td className={styles.emailSentCell}>
+                    {rsvp.emailSent ? (
+                      <>Mail: {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</>
+                    ) : (
+                      <>Mail: No enviado</>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -500,30 +498,28 @@ export default function AdminDashboard() {
                       📧
                     </button>
                   </td>
-                  <td className={styles.emailSentCell}>
-                    {rsvp.emailSent ? (
-                      <span className={styles.emailSent}>
-                        ✉️ {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                      </span>
-                    ) : (
-                      <span className={styles.emailNotSent}>📭</span>
-                    )}
-                  </td>
                   <td className={styles.nameCell}>{rsvp.name}</td>
                   <td className={styles.plusOneCell}>
-                    {rsvp.plusOne ? (
-                      <span className={styles.plusOneBadge}>👥 +1</span>
-                    ) : (
-                      <span className={styles.noPlusOne}>—</span>
-                    )}
+                    {rsvp.plusOne && <span className={styles.plusOneBadge}>👥 +1</span>}
                   </td>
-                  <td className={styles.emailCell}>{rsvp.email}</td>
-                  <td className={styles.phoneCell}>{rsvp.phone}</td>
+                  <td className={styles.emailCell}>
+                    <a href={`mailto:${rsvp.email}`}>{rsvp.email}</a>
+                  </td>
+                  <td className={styles.phoneCell}>
+                    <a href={`tel:${rsvp.phone}`}>{rsvp.phone}</a>
+                  </td>
                   <td className={styles.statusCell}>
                     <span className={styles.cancelled}>❌</span>
                   </td>
                   <td className={styles.dateCell}>
-                    📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                    Registro: {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                  </td>
+                  <td className={styles.emailSentCell}>
+                    {rsvp.emailSent ? (
+                      <>Mail: {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</>
+                    ) : (
+                      <>Mail: No enviado</>
+                    )}
                   </td>
                 </tr>
               ))}
