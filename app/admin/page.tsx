@@ -279,6 +279,48 @@ export default function AdminDashboard() {
     }
   }
 
+  // Toggle status (confirmar/cancelar) sin enviar email
+  const toggleStatus = async (rsvp: RSVP) => {
+    const newStatus = rsvp.status === 'confirmed' ? 'cancelled' : 'confirmed'
+    const action = newStatus === 'confirmed' ? 'reconfirmar' : 'cancelar'
+    
+    if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} asistencia de ${rsvp.name}? (sin enviar email)`)) {
+      return
+    }
+
+    setLoading(true)
+    setMessage(`${action.charAt(0).toUpperCase() + action.slice(1)}ando...`)
+    
+    try {
+      const authHeader = sessionStorage.getItem('admin_auth')
+      
+      const response = await fetch('/api/admin/update-rsvp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authHeader}`
+        },
+        body: JSON.stringify({
+          rsvpId: rsvp.id,
+          updates: { status: newStatus }
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage(`✅ ${rsvp.name} ${newStatus === 'confirmed' ? 'reconfirmado' : 'cancelado'}`)
+        await loadRSVPs()
+      } else {
+        setMessage(`❌ Error: ${data.error}`)
+      }
+    } catch (error) {
+      setMessage('❌ Error al actualizar estado')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Cerrar sesión
   const handleLogout = () => {
     sessionStorage.removeItem('admin_auth')
@@ -455,8 +497,17 @@ export default function AdminDashboard() {
                       onClick={() => sendEmail(rsvp)}
                       disabled={loading}
                       className={styles.sendBtn}
+                      title="Enviar email"
                     >
                       📧
+                    </button>
+                    <button
+                      onClick={() => toggleStatus(rsvp)}
+                      disabled={loading}
+                      className={styles.toggleBtn}
+                      title="Cancelar asistencia"
+                    >
+                      ❌
                     </button>
                   </td>
                   <td className={styles.emailSentCell}>
@@ -511,8 +562,17 @@ export default function AdminDashboard() {
                       onClick={() => sendEmail(rsvp)}
                       disabled={loading}
                       className={styles.sendBtn}
+                      title="Enviar email de re-invitación"
                     >
                       📧
+                    </button>
+                    <button
+                      onClick={() => toggleStatus(rsvp)}
+                      disabled={loading}
+                      className={styles.toggleBtn}
+                      title="Reconfirmar asistencia"
+                    >
+                      ✅
                     </button>
                   </td>
                   <td className={styles.emailSentCell}>

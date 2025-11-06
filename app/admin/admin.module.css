@@ -348,6 +348,28 @@
   cursor: not-allowed;
 }
 
+.toggleBtn {
+  padding: 8px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  margin-left: 6px;
+}
+
+.toggleBtn:hover:not(:disabled) {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+.toggleBtn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
 .noData {
   text-align: center;
   padding: 40px;
@@ -448,6 +470,8 @@
     top: 10px;
     right: 12px;
     grid-area: auto;
+    display: flex;
+    gap: 4px;
   }
 
   .actionCell .sendBtn {
@@ -455,6 +479,14 @@
     font-size: 14px;
     min-width: auto;
     line-height: 1;
+  }
+
+  .actionCell .toggleBtn {
+    padding: 2px 6px;
+    font-size: 14px;
+    min-width: auto;
+    line-height: 1;
+    margin-left: 0;
   }
 
   /* Name - takes full width in mobile */
