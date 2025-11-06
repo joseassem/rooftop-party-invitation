@@ -451,7 +451,7 @@ export default function AdminDashboard() {
                   <td className={styles.nameCell}>{rsvp.name}</td>
                   <td className={styles.plusOneCell}>
                     {rsvp.plusOne ? (
-                      <span className={styles.plusOneBadge}>➕ +1</span>
+                      <span className={styles.plusOneBadge}>👥 +1</span>
                     ) : (
                       <span className={styles.noPlusOne}>—</span>
                     )}
@@ -512,7 +512,7 @@ export default function AdminDashboard() {
                   <td className={styles.nameCell}>{rsvp.name}</td>
                   <td className={styles.plusOneCell}>
                     {rsvp.plusOne ? (
-                      <span className={styles.plusOneBadge}>➕ +1</span>
+                      <span className={styles.plusOneBadge}>👥 +1</span>
                     ) : (
                       <span className={styles.noPlusOne}>—</span>
                     )}
