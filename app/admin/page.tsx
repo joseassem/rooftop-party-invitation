@@ -440,12 +440,12 @@ export default function AdminDashboard() {
             <thead>
               <tr>
                 <th>Acciones</th>
+                <th>Email Enviado</th>
                 <th>Nombre</th>
                 <th>+1</th>
                 <th>Email</th>
                 <th>Teléfono</th>
                 <th>Fecha Registro</th>
-                <th>Email Enviado</th>
               </tr>
             </thead>
             <tbody>
@@ -460,8 +460,15 @@ export default function AdminDashboard() {
                       📧
                     </button>
                   </td>
-                  <td className={styles.nameCell}>{rsvp.name}</td>
-                  <td className={styles.plusOneCell}>
+                  <td className={styles.emailSentCell}>
+                    {rsvp.emailSent ? (
+                      <>Mail: {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</>
+                    ) : (
+                      <>Mail: No enviado</>
+                    )}
+                  </td>
+                  <td className={styles.nameCell}>
+                    <span>{rsvp.name}</span>
                     {rsvp.plusOne && <span className={styles.plusOneBadge}>👥 +1</span>}
                   </td>
                   <td className={styles.emailCell}>
@@ -474,13 +481,6 @@ export default function AdminDashboard() {
                   </td>
                   <td className={styles.dateCell}>
                     Registro: {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                  </td>
-                  <td className={styles.emailSentCell}>
-                    {rsvp.emailSent ? (
-                      <>Mail: {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</>
-                    ) : (
-                      <>Mail: No enviado</>
-                    )}
                   </td>
                 </tr>
               ))}
@@ -497,12 +497,12 @@ export default function AdminDashboard() {
             <thead>
               <tr>
                 <th>Acciones</th>
+                <th>Email Enviado</th>
                 <th>Nombre</th>
                 <th>+1</th>
                 <th>Email</th>
                 <th>Teléfono</th>
                 <th>Fecha Registro</th>
-                <th>Email Enviado</th>
               </tr>
             </thead>
             <tbody>
@@ -517,8 +517,15 @@ export default function AdminDashboard() {
                       📧
                     </button>
                   </td>
-                  <td className={styles.nameCell}>{rsvp.name}</td>
-                  <td className={styles.plusOneCell}>
+                  <td className={styles.emailSentCell}>
+                    {rsvp.emailSent ? (
+                      <>Mail: {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</>
+                    ) : (
+                      <>Mail: No enviado</>
+                    )}
+                  </td>
+                  <td className={styles.nameCell}>
+                    <span>{rsvp.name}</span>
                     {rsvp.plusOne && <span className={styles.plusOneBadge}>👥 +1</span>}
                   </td>
                   <td className={styles.emailCell}>
@@ -531,13 +538,6 @@ export default function AdminDashboard() {
                   </td>
                   <td className={styles.dateCell}>
                     Registro: {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                  </td>
-                  <td className={styles.emailSentCell}>
-                    {rsvp.emailSent ? (
-                      <>Mail: {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</>
-                    ) : (
-                      <>Mail: No enviado</>
-                    )}
                   </td>
                 </tr>
               ))}

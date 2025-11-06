@@ -410,11 +410,11 @@
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     grid-template-rows: auto;
-    gap: 6px 10px;
+    gap: 6px;
     grid-template-areas:
-      "name plusone"
+      "name"
       "phone email"
       "date emailsent";
   }
@@ -454,14 +454,16 @@
     font-weight: 600;
     color: #1f2937;
     padding-right: 40px; /* Space for action button */
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  /* PlusOne - right side of name, only shows if has +1 */
+  /* PlusOne - inline with name */
   .plusOneCell {
-    grid-area: plusone;
+    grid-area: name;
     font-size: 12px;
-    text-align: right;
-    padding-right: 40px; /* Space for action button */
+    display: inline;
   }
 
   /* Email - left side, as link */
@@ -486,11 +488,12 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 4px;
   }
 
   .phoneNumber {
     color: #4b5563;
+    margin-right: 8px;
   }
 
   .phoneBtn {
