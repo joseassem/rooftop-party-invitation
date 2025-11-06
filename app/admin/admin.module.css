@@ -350,24 +350,28 @@
 
 .toggleBtn {
   padding: 8px 12px;
-  background: #ef4444;
-  color: white;
-  border: none;
+  background: white;
+  color: #ef4444;
+  border: 1px solid #ef4444;
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
+  transition: all 0.3s, transform 0.2s;
   margin-left: 6px;
   outline: none;
 }
 
 .toggleBtn:hover:not(:disabled) {
-  background: #dc2626;
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
   transform: scale(1.05);
 }
 
 .toggleBtn:disabled {
-  background: #d1d5db;
+  background: #f9fafb;
+  color: #d1d5db;
+  border-color: #d1d5db;
   cursor: not-allowed;
 }
 
