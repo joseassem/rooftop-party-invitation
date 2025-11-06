@@ -424,69 +424,133 @@ export default function AdminDashboard() {
 
       {message && <div className={styles.message}>{message}</div>}
 
-      {/* Tabla de RSVPs */}
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Acciones</th>
-              <th>Email Enviado</th>
-              <th>Nombre</th>
-              <th>+1</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Estado</th>
-              <th>Fecha Registro</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRsvps.map((rsvp) => (
-              <tr key={rsvp.id} className={styles.rsvpRow}>
-                <td className={styles.actionCell}>
-                  <button
-                    onClick={() => sendEmail(rsvp)}
-                    disabled={loading}
-                    className={styles.sendBtn}
-                  >
-                    📧
-                  </button>
-                </td>
-                <td className={styles.emailSentCell}>
-                  {rsvp.emailSent ? (
-                    <span className={styles.emailSent}>
-                      ✉️ {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                    </span>
-                  ) : (
-                    <span className={styles.emailNotSent}>📭</span>
-                  )}
-                </td>
-                <td className={styles.nameCell}>{rsvp.name}</td>
-                <td className={styles.plusOneCell}>
-                  {rsvp.plusOne ? (
-                    <span className={styles.plusOneBadge}>➕ +1</span>
-                  ) : (
-                    <span className={styles.noPlusOne}>—</span>
-                  )}
-                </td>
-                <td className={styles.emailCell}>{rsvp.email}</td>
-                <td className={styles.phoneCell}>{rsvp.phone}</td>
-                <td className={styles.statusCell}>
-                  <span className={rsvp.status === 'confirmed' ? styles.confirmed : styles.cancelled}>
-                    {rsvp.status === 'confirmed' ? '✅ Confirmado' : '❌ Cancelado'}
-                  </span>
-                </td>
-                <td className={styles.dateCell}>
-                  📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                </td>
+      {/* Tabla de RSVPs Confirmados */}
+      {filteredRsvps.filter(r => r.status === 'confirmed').length > 0 && (
+        <div className={styles.tableContainer}>
+          <h2 className={styles.sectionTitle}>✅ Confirmados ({filteredRsvps.filter(r => r.status === 'confirmed').length})</h2>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Email Enviado</th>
+                <th>Nombre</th>
+                <th>+1</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Fecha Registro</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredRsvps.filter(r => r.status === 'confirmed').map((rsvp) => (
+                <tr key={rsvp.id} className={styles.rsvpRow}>
+                  <td className={styles.actionCell}>
+                    <button
+                      onClick={() => sendEmail(rsvp)}
+                      disabled={loading}
+                      className={styles.sendBtn}
+                    >
+                      📧
+                    </button>
+                  </td>
+                  <td className={styles.emailSentCell}>
+                    {rsvp.emailSent ? (
+                      <span className={styles.emailSent}>
+                        ✉️ {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                      </span>
+                    ) : (
+                      <span className={styles.emailNotSent}>📭</span>
+                    )}
+                  </td>
+                  <td className={styles.nameCell}>{rsvp.name}</td>
+                  <td className={styles.plusOneCell}>
+                    {rsvp.plusOne ? (
+                      <span className={styles.plusOneBadge}>➕ +1</span>
+                    ) : (
+                      <span className={styles.noPlusOne}>—</span>
+                    )}
+                  </td>
+                  <td className={styles.emailCell}>{rsvp.email}</td>
+                  <td className={styles.phoneCell}>{rsvp.phone}</td>
+                  <td className={styles.statusCell}>
+                    <span className={styles.confirmed}>✅ Confirmado</span>
+                  </td>
+                  <td className={styles.dateCell}>
+                    📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-        {filteredRsvps.length === 0 && (
+      {/* Tabla de RSVPs Cancelados */}
+      {filteredRsvps.filter(r => r.status === 'cancelled').length > 0 && (
+        <div className={styles.tableContainer}>
+          <h2 className={styles.sectionTitle}>❌ Cancelados ({filteredRsvps.filter(r => r.status === 'cancelled').length})</h2>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Email Enviado</th>
+                <th>Nombre</th>
+                <th>+1</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Fecha Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRsvps.filter(r => r.status === 'cancelled').map((rsvp) => (
+                <tr key={rsvp.id} className={styles.rsvpRow}>
+                  <td className={styles.actionCell}>
+                    <button
+                      onClick={() => sendEmail(rsvp)}
+                      disabled={loading}
+                      className={styles.sendBtn}
+                    >
+                      📧
+                    </button>
+                  </td>
+                  <td className={styles.emailSentCell}>
+                    {rsvp.emailSent ? (
+                      <span className={styles.emailSent}>
+                        ✉️ {new Date(rsvp.emailSent).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                      </span>
+                    ) : (
+                      <span className={styles.emailNotSent}>📭</span>
+                    )}
+                  </td>
+                  <td className={styles.nameCell}>{rsvp.name}</td>
+                  <td className={styles.plusOneCell}>
+                    {rsvp.plusOne ? (
+                      <span className={styles.plusOneBadge}>➕ +1</span>
+                    ) : (
+                      <span className={styles.noPlusOne}>—</span>
+                    )}
+                  </td>
+                  <td className={styles.emailCell}>{rsvp.email}</td>
+                  <td className={styles.phoneCell}>{rsvp.phone}</td>
+                  <td className={styles.statusCell}>
+                    <span className={styles.cancelled}>❌ Cancelado</span>
+                  </td>
+                  <td className={styles.dateCell}>
+                    📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {filteredRsvps.length === 0 && (
+        <div className={styles.tableContainer}>
           <p className={styles.noData}>No hay RSVPs que coincidan con los filtros</p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

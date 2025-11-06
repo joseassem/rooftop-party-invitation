@@ -353,6 +353,15 @@
   color: #9ca3af;
 }
 
+.sectionTitle {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
@@ -364,9 +373,15 @@
     flex-direction: column;
   }
 
+  .sectionTitle {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
   /* Mobile card layout - no horizontal scroll */
   .tableContainer {
     overflow-x: visible;
+    margin-bottom: 20px;
   }
 
   /* Hide table header on mobile */
@@ -382,7 +397,7 @@
     width: 100%;
   }
 
-  /* Style each row as a card */
+  /* Style each row as a card with grid layout */
   .table tbody tr {
     position: relative;
     padding: 16px 16px 16px 16px;
@@ -391,6 +406,16 @@
     border-radius: 8px;
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    gap: 8px 12px;
+    grid-template-areas:
+      "name name"
+      "email email"
+      "phone phone"
+      "plusone status"
+      "emailsent date";
   }
 
   .table tbody tr:hover {
@@ -411,6 +436,7 @@
     position: absolute;
     top: 12px;
     right: 12px;
+    grid-area: auto;
   }
 
   .actionCell .sendBtn {
@@ -419,43 +445,51 @@
     min-width: auto;
   }
 
-  /* Name - Line 1 (large, bold) */
+  /* Name - spans full width */
   .nameCell {
+    grid-area: name;
     font-size: 18px;
     font-weight: 600;
     color: #1f2937;
-    margin-bottom: 8px;
     padding-right: 50px; /* Space for action button */
   }
 
-  /* Email - Line 2 */
+  /* Email - spans full width */
   .emailCell {
+    grid-area: email;
     font-size: 14px;
     color: #4b5563;
-    margin-bottom: 4px;
   }
 
-  /* Phone - Line 3 */
+  /* Phone - spans full width */
   .phoneCell {
+    grid-area: phone;
     font-size: 14px;
     color: #4b5563;
-    margin-bottom: 8px;
   }
 
-  /* PlusOne & Status - Line 4 (side by side) */
-  .plusOneCell,
-  .statusCell {
-    display: inline-block;
-    margin-right: 12px;
-    margin-bottom: 6px;
+  /* PlusOne - left column */
+  .plusOneCell {
+    grid-area: plusone;
     font-size: 13px;
   }
 
-  /* Email Sent & Registration Date - Line 5 (side by side) */
-  .emailSentCell,
+  /* Status - right column */
+  .statusCell {
+    grid-area: status;
+    font-size: 13px;
+  }
+
+  /* Email Sent - left column */
+  .emailSentCell {
+    grid-area: emailsent;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  /* Registration Date - right column */
   .dateCell {
-    display: inline-block;
-    margin-right: 12px;
+    grid-area: date;
     font-size: 12px;
     color: #6b7280;
   }
