@@ -447,7 +447,9 @@ export default function AdminDashboard() {
                     <a href={`mailto:${rsvp.email}`}>{rsvp.email}</a>
                   </td>
                   <td className={styles.phoneCell}>
-                    <a href={`tel:${rsvp.phone}`}>{rsvp.phone}</a>
+                    <span className={styles.phoneNumber}>{rsvp.phone}</span>
+                    <a href={`tel:${rsvp.phone}`} className={styles.phoneBtn} title="Llamar">📞</a>
+                    <a href={`https://wa.me/${rsvp.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className={styles.phoneBtn} title="WhatsApp">💬</a>
                   </td>
                   <td className={styles.dateCell}>
                     Registro: {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
@@ -503,7 +505,9 @@ export default function AdminDashboard() {
                     <a href={`mailto:${rsvp.email}`}>{rsvp.email}</a>
                   </td>
                   <td className={styles.phoneCell}>
-                    <a href={`tel:${rsvp.phone}`}>{rsvp.phone}</a>
+                    <span className={styles.phoneNumber}>{rsvp.phone}</span>
+                    <a href={`tel:${rsvp.phone}`} className={styles.phoneBtn} title="Llamar">📞</a>
+                    <a href={`https://wa.me/${rsvp.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className={styles.phoneBtn} title="WhatsApp">💬</a>
                   </td>
                   <td className={styles.dateCell}>
                     Registro: {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}

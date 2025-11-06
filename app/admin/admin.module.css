@@ -476,18 +476,34 @@
     text-decoration: none;
   }
 
-  /* Phone - right side, as link */
+  /* Phone - right side, with action buttons */
   .phoneCell {
     grid-area: phone;
     font-size: 13px;
     color: #4b5563;
     text-align: right;
     padding-right: 40px; /* Space for action button */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
   }
 
-  .phoneCell a {
-    color: #667eea;
+  .phoneNumber {
+    color: #4b5563;
+  }
+
+  .phoneBtn {
+    font-size: 16px;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+
+  .phoneBtn:hover {
+    transform: scale(1.2);
   }
 
   /* Status - hidden in mobile */
