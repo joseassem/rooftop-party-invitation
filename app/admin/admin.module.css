@@ -415,7 +415,7 @@
     gap: 6px 10px;
     grid-template-areas:
       "name plusone"
-      "email phone"
+      "phone email"
       "date emailsent";
   }
 
@@ -486,7 +486,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 10px;
   }
 
   .phoneNumber {

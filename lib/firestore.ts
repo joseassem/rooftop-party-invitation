@@ -60,7 +60,7 @@ export interface RSVP {
   emailSent?: string // timestamp del último email enviado
   emailHistory?: Array<{
     sentAt: string
-    type: 'confirmation' | 'reminder'
+    type: 'confirmation' | 'reminder' | 're-invitation'
   }>
   cancelToken?: string // token único para cancelar desde email
 }
@@ -196,7 +196,7 @@ export function validateCancelToken(token: string, rsvpId: string, email: string
 }
 
 // Función para registrar envío de email
-export async function recordEmailSent(rsvpId: string, type: 'confirmation' | 'reminder') {
+export async function recordEmailSent(rsvpId: string, type: 'confirmation' | 'reminder' | 're-invitation') {
   try {
     const docRef = db.collection(collectionName).doc(rsvpId)
     const doc = await docRef.get()
@@ -207,7 +207,7 @@ export async function recordEmailSent(rsvpId: string, type: 'confirmation' | 're
 
     const currentHistory = (doc.data()?.emailHistory || []) as Array<{
       sentAt: string
-      type: 'confirmation' | 'reminder'
+      type: 'confirmation' | 'reminder' | 're-invitation'
     }>
 
     await docRef.update({

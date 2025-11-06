@@ -5,24 +5,35 @@ interface EmailTemplateProps {
   plusOne: boolean
   cancelUrl: string
   isReminder?: boolean // true = recordatorio, false/undefined = confirmación
+  isCancelled?: boolean // true = re-invitación a quien canceló
 }
 
-export function generateConfirmationEmail({ name, plusOne, cancelUrl, isReminder = false }: EmailTemplateProps): string {
+export function generateConfirmationEmail({ name, plusOne, cancelUrl, isReminder = false, isCancelled = false }: EmailTemplateProps): string {
   const { event, theme } = eventConfig
   
   // Limpiar cualquier = al inicio de la URL (bug de encoding)
   const cleanCancelUrl = cancelUrl.replace(/^=+/, '').trim()
 
   // Textos según tipo de email
-  const greeting = isReminder 
-    ? `¡Hola <strong>${name}</strong>! 👋` 
-    : `¡Hola <strong>${name}</strong>!`
-  const mainText = isReminder
-    ? `Te recordamos que tu asistencia está confirmada para <strong>${event.title}</strong>.`
-    : `Tu asistencia ha sido confirmada para <strong>${event.title}</strong>.`
-  const closingText = isReminder
-    ? `¡Te esperamos! 🎊`
-    : `¡Nos vemos ahí! 🎉`
+  let greeting, mainText, closingText, headerBadge
+  
+  if (isCancelled) {
+    // Email especial para quien canceló - tono elegante y no invasivo
+    greeting = `¡Hola <strong>${name}</strong>! 👋`
+    mainText = `Sabemos que habías cancelado tu asistencia a <strong>${event.title}</strong>, pero queríamos recordarte que siempre eres bienvenid${name.endsWith('a') ? 'a' : 'o'} por si tus planes cambian. Si tienes la oportunidad de acompañarnos, nos encantaría verte ahí.`
+    closingText = `Sin presión, pero las puertas están abiertas para ti. 🌟`
+    headerBadge = 'Te extrañamos'
+  } else if (isReminder) {
+    greeting = `¡Hola <strong>${name}</strong>! 👋`
+    mainText = `Te recordamos que tu asistencia está confirmada para <strong>${event.title}</strong>.`
+    closingText = `¡Te esperamos! 🎊`
+    headerBadge = 'Recordatorio'
+  } else {
+    greeting = `¡Hola <strong>${name}</strong>!`
+    mainText = `Tu asistencia ha sido confirmada para <strong>${event.title}</strong>.`
+    closingText = `¡Nos vemos ahí! �`
+    headerBadge = null
+  }
 
   return `
 <!DOCTYPE html>
@@ -30,7 +41,7 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl, isReminder
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${isReminder ? 'Recordatorio' : 'Confirmación'} RSVP - ${event.title}</title>
+  <title>${isCancelled ? 'Te extrañamos' : (isReminder ? 'Recordatorio' : 'Confirmación')} RSVP - ${event.title}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color: #f4f4f4;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -41,9 +52,9 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl, isReminder
           <!-- Header con colores del evento -->
           <tr>
             <td style="background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.backgroundColor} 100%); padding: 40px 30px; text-align: center;">
-              ${isReminder ? `
-              <p style="margin: 0 0 10px 0; color: #fbbf24; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">
-                Recordatorio
+              ${headerBadge ? `
+              <p style="margin: 0 0 10px 0; color: ${isCancelled ? '#fbbf24' : '#fbbf24'}; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">
+                ${headerBadge}
               </p>
               ` : ''}
               <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
@@ -156,21 +167,24 @@ export function generateConfirmationEmail({ name, plusOne, cancelUrl, isReminder
               </table>
 
               <p style="margin: 0 0 30px 0; font-size: 14px; line-height: 1.6; color: #777777;">
-                Si necesitas modificar tus datos o cancelar tu asistencia, haz clic en el botón de abajo:
-
+                ${isCancelled 
+                  ? 'Si decides acompañarnos, solo haz clic abajo para reconfirmar tu asistencia. Si no puedes, no hay problema - quedamos igual de bien. 😊'
+                  : 'Si necesitas modificar tus datos o cancelar tu asistencia, haz clic en el botón de abajo:'}
               </p>
 
-              <!-- Botón de cancelación -->
+              <!-- Botón de cancelación o reconfirmación -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0 0 20px 0;">
                 <tr>
                   <td align="center" style="padding: 0;">
-                    <a href="${cleanCancelUrl}" target="_blank" style="background-color:#667eea;border:2px solid #667eea;border-radius:6px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:16px;font-weight:600;line-height:50px;text-align:center;text-decoration:none;width:280px;-webkit-text-size-adjust:none;">Modificar o Cancelar</a>
+                    <a href="${cleanCancelUrl}" target="_blank" style="background-color:${isCancelled ? '#10b981' : '#667eea'};border:2px solid ${isCancelled ? '#10b981' : '#667eea'};border-radius:6px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:16px;font-weight:600;line-height:50px;text-align:center;text-decoration:none;width:280px;-webkit-text-size-adjust:none;">${isCancelled ? 'Reconfirmar Asistencia ✨' : 'Modificar o Cancelar'}</a>
                   </td>
                 </tr>
               </table>
 
               <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 1.5; color: #9ca3af; text-align: center; font-style: italic;">
-                💡 Si cancelas, puedes usar este mismo enlace para reconfirmar tu asistencia más tarde
+                ${isCancelled 
+                  ? '✨ Recuerda que puedes cambiar de opinión las veces que necesites'
+                  : '💡 Si cancelas, puedes usar este mismo enlace para reconfirmar tu asistencia más tarde'}
               </p>
               
               <p style="margin: 0 0 20px 0; font-size: 12px; line-height: 1.6; color: #999999; text-align: center;">

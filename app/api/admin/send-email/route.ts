@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { rsvpId, name, email, plusOne, emailSent } = body
+    const { rsvpId, name, email, plusOne, emailSent, status } = body
 
     if (!rsvpId || !name || !email) {
       return NextResponse.json(
@@ -22,8 +22,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Determinar si es recordatorio (ya se envió email antes)
-    const isReminder = !!emailSent
+    // Determinar tipo de email según estado
+    const isCancelled = status === 'cancelled'
+    const isReminder = !isCancelled && !!emailSent
 
     // Generar token de cancelación
     const cancelToken = generateCancelToken(rsvpId, email)
@@ -37,13 +38,19 @@ export async function POST(request: NextRequest) {
       name,
       plusOne: plusOne || false,
       cancelUrl,
-      isReminder
+      isReminder,
+      isCancelled
     })
 
     // Asunto según tipo de email
-    const subject = isReminder 
-      ? `Recordatorio - ${eventConfig.event.title}`
-      : `Confirmación - ${eventConfig.event.title}`
+    let subject
+    if (isCancelled) {
+      subject = `Te extrañamos - ${eventConfig.event.title}`
+    } else if (isReminder) {
+      subject = `Recordatorio - ${eventConfig.event.title}`
+    } else {
+      subject = `Confirmación - ${eventConfig.event.title}`
+    }
 
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
@@ -62,11 +69,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Registrar envío en Firestore
-    await recordEmailSent(rsvpId, isReminder ? 'reminder' : 'confirmation')
+    const emailType = isCancelled ? 're-invitation' : (isReminder ? 'reminder' : 'confirmation')
+    await recordEmailSent(rsvpId, emailType)
 
     return NextResponse.json({
       success: true,
-      message: `Email ${isReminder ? 'recordatorio' : 'confirmación'} enviado exitosamente`,
+      message: `Email ${isCancelled ? 'de re-invitación' : (isReminder ? 'recordatorio' : 'confirmación')} enviado exitosamente`,
       emailId: data?.id
     })
 

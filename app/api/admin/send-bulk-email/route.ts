@@ -46,8 +46,9 @@ export async function POST(request: NextRequest) {
     // Enviar emails uno por uno
     for (const rsvp of filteredRsvps) {
       try {
-        // Determinar si es recordatorio (ya se envió email antes)
-        const isReminder = !!rsvp.emailSent
+        // Determinar tipo de email según estado
+        const isCancelled = rsvp.status === 'cancelled'
+        const isReminder = !isCancelled && !!rsvp.emailSent
 
         const cancelToken = generateCancelToken(rsvp.id!, rsvp.email)
         const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cancel/${rsvp.id}?token=${cancelToken}`
@@ -56,13 +57,19 @@ export async function POST(request: NextRequest) {
           name: rsvp.name,
           plusOne: rsvp.plusOne || false,
           cancelUrl,
-          isReminder
+          isReminder,
+          isCancelled
         })
 
         // Asunto según tipo de email
-        const subject = isReminder 
-          ? `Recordatorio - ${eventConfig.event.title}`
-          : `Confirmación - ${eventConfig.event.title}`
+        let subject
+        if (isCancelled) {
+          subject = `Te extrañamos - ${eventConfig.event.title}`
+        } else if (isReminder) {
+          subject = `Recordatorio - ${eventConfig.event.title}`
+        } else {
+          subject = `Confirmación - ${eventConfig.event.title}`
+        }
 
         const { error } = await resend.emails.send({
           from: FROM_EMAIL,
@@ -76,7 +83,8 @@ export async function POST(request: NextRequest) {
           results.errors.push(`${rsvp.email}: ${error.message}`)
           console.error(`Error enviando a ${rsvp.email}:`, error)
         } else {
-          await recordEmailSent(rsvp.id!, isReminder ? 'reminder' : 'confirmation')
+          const emailType = isCancelled ? 're-invitation' : (isReminder ? 'reminder' : 'confirmation')
+          await recordEmailSent(rsvp.id!, emailType)
           results.sent++
         }
 

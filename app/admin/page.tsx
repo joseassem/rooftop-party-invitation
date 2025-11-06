@@ -166,9 +166,24 @@ export default function AdminDashboard() {
 
   // Enviar email individual
   const sendEmail = async (rsvp: RSVP) => {
+    const isCancelled = rsvp.status === 'cancelled'
+    const isReminder = !isCancelled && !!rsvp.emailSent
+    
+    let messageType = 'email de confirmación'
+    if (isCancelled) messageType = 'email de re-invitación'
+    else if (isReminder) messageType = 'email recordatorio'
+    
+    // Confirmación antes de enviar
+    const confirmed = window.confirm(
+      `¿Estás seguro de enviar ${messageType} a ${rsvp.name} (${rsvp.email})?`
+    )
+    
+    if (!confirmed) {
+      return // Usuario canceló
+    }
+    
     setLoading(true)
-    const isReminder = !!rsvp.emailSent
-    setMessage(`Enviando ${isReminder ? 'recordatorio' : 'email'}...`)
+    setMessage(`Enviando ${messageType}...`)
     
     try {
       const authHeader = sessionStorage.getItem('admin_auth')
@@ -186,7 +201,8 @@ export default function AdminDashboard() {
           name: rsvp.name,
           email: rsvp.email,
           plusOne: rsvp.plusOne,
-          emailSent: rsvp.emailSent
+          emailSent: rsvp.emailSent,
+          status: rsvp.status
         })
       })
 
@@ -195,7 +211,7 @@ export default function AdminDashboard() {
       console.log('📬 Response data:', data)
 
       if (data.success) {
-        setMessage(`✅ ${isReminder ? 'Recordatorio' : 'Email'} enviado a ${rsvp.name}`)
+        setMessage(`✅ ${isCancelled ? 'Re-invitación' : (isReminder ? 'Recordatorio' : 'Email')} enviado a ${rsvp.name}`)
         await loadRSVPs()
       } else {
         setMessage(`❌ Error: ${data.error}`)
@@ -215,12 +231,18 @@ export default function AdminDashboard() {
       return
     }
 
-    const notSentCount = emailTargetRsvps.filter(r => !r.emailSent).length
-    const confirmMessage = notSentCount > 0
-      ? `¿Enviar emails a ${count} personas? (${notSentCount} sin email previo)`
-      : `¿Enviar emails a ${count} personas? (Todos ya recibieron email antes)`
+    // Contar por tipo de email
+    const cancelledCount = emailTargetRsvps.filter(r => r.status === 'cancelled').length
+    const notSentCount = emailTargetRsvps.filter(r => r.status === 'confirmed' && !r.emailSent).length
+    const remindersCount = emailTargetRsvps.filter(r => r.status === 'confirmed' && r.emailSent).length
     
-    if (!confirm(confirmMessage)) {
+    // Mensaje de confirmación detallado
+    let confirmParts = [`¿Enviar emails a ${count} personas?`]
+    if (notSentCount > 0) confirmParts.push(`\n• ${notSentCount} confirmación${notSentCount > 1 ? 'es' : ''}`)
+    if (remindersCount > 0) confirmParts.push(`\n• ${remindersCount} recordatorio${remindersCount > 1 ? 's' : ''}`)
+    if (cancelledCount > 0) confirmParts.push(`\n• ${cancelledCount} re-invitación${cancelledCount > 1 ? 'es' : ''}`)
+    
+    if (!confirm(confirmParts.join(''))) {
       return
     }
 
@@ -418,13 +440,12 @@ export default function AdminDashboard() {
             <thead>
               <tr>
                 <th>Acciones</th>
-                <th>Email Enviado</th>
                 <th>Nombre</th>
                 <th>+1</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Estado</th>
                 <th>Fecha Registro</th>
+                <th>Email Enviado</th>
               </tr>
             </thead>
             <tbody>
@@ -476,13 +497,12 @@ export default function AdminDashboard() {
             <thead>
               <tr>
                 <th>Acciones</th>
-                <th>Email Enviado</th>
                 <th>Nombre</th>
                 <th>+1</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Estado</th>
                 <th>Fecha Registro</th>
+                <th>Email Enviado</th>
               </tr>
             </thead>
             <tbody>
