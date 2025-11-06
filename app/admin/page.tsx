@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { PhoneInput } from 'react-international-phone'
+import 'react-international-phone/style.css'
 import eventConfig from '@/event-config.json'
 import styles from './admin.module.css'
 
@@ -580,20 +582,20 @@ export default function AdminDashboard() {
                       📧
                     </button>
                     <button
-                      onClick={() => toggleStatus(rsvp)}
-                      disabled={loading}
-                      className={styles.toggleBtn}
-                      title="Cancelar asistencia"
-                    >
-                      ❌
-                    </button>
-                    <button
                       onClick={() => openEditModal(rsvp)}
                       disabled={loading}
                       className={styles.editBtn}
                       title="Editar datos"
                     >
                       ✏️
+                    </button>
+                    <button
+                      onClick={() => toggleStatus(rsvp)}
+                      disabled={loading}
+                      className={styles.toggleBtn}
+                      title="Cancelar asistencia"
+                    >
+                      ❌
                     </button>
                   </td>
                   <td className={styles.emailSentCell}>
@@ -653,20 +655,20 @@ export default function AdminDashboard() {
                       📧
                     </button>
                     <button
-                      onClick={() => toggleStatus(rsvp)}
-                      disabled={loading}
-                      className={styles.toggleBtn}
-                      title="Reconfirmar asistencia"
-                    >
-                      ✅
-                    </button>
-                    <button
                       onClick={() => openEditModal(rsvp)}
                       disabled={loading}
                       className={styles.editBtn}
                       title="Editar datos"
                     >
                       ✏️
+                    </button>
+                    <button
+                      onClick={() => toggleStatus(rsvp)}
+                      disabled={loading}
+                      className={styles.toggleBtn}
+                      title="Reconfirmar asistencia"
+                    >
+                      ✅
                     </button>
                   </td>
                   <td className={styles.emailSentCell}>
@@ -731,12 +733,15 @@ export default function AdminDashboard() {
               </div>
               <div className={styles.editFormGroup}>
                 <label className={styles.editFormLabel}>Teléfono *</label>
-                <input
-                  type="tel"
-                  className={styles.editFormInput}
+                <PhoneInput
+                  defaultCountry="mx"
                   value={editForm.phone}
-                  onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                  required
+                  onChange={(phone) => setEditForm({...editForm, phone})}
+                  className={styles.editFormPhoneInput}
+                  inputClassName={styles.editFormPhoneInputField}
+                  countrySelectorStyleProps={{
+                    buttonClassName: styles.editFormCountrySelector
+                  }}
                 />
               </div>
               <div className={styles.editFormGroup}>

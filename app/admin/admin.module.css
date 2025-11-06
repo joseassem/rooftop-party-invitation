@@ -358,6 +358,7 @@
   cursor: pointer;
   transition: background 0.3s, transform 0.2s;
   margin-left: 6px;
+  outline: none;
 }
 
 .toggleBtn:hover:not(:disabled) {
@@ -380,6 +381,7 @@
   cursor: pointer;
   transition: background 0.3s, transform 0.2s;
   margin-left: 6px;
+  outline: none;
 }
 
 .editBtn:hover:not(:disabled) {
@@ -510,6 +512,77 @@
   background: #e5e7eb;
 }
 
+/* Phone input styles for edit modal */
+.editFormPhoneInput {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+}
+
+.editFormCountrySelector {
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  border-right: none !important;
+  border-radius: 8px 0 0 8px !important;
+  padding: 12px !important;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 85px;
+}
+
+.editFormCountrySelector:hover {
+  border-color: #6366f1 !important;
+}
+
+.editFormPhoneInputField {
+  flex: 1;
+  padding: 12px !important;
+  font-size: 16px !important;
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  border-left: none !important;
+  border-radius: 0 8px 8px 0 !important;
+  color: #1f2937 !important;
+  transition: border-color 0.3s;
+  outline: none !important;
+}
+
+.editFormPhoneInputField:focus {
+  border-color: #6366f1 !important;
+}
+
+.editFormPhoneInput :global(.react-international-phone-country-selector-button__button-content) {
+  color: #1f2937;
+}
+
+.editFormPhoneInput :global(.react-international-phone-country-selector-dropdown) {
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.editFormPhoneInput :global(.react-international-phone-country-selector-dropdown__list-item) {
+  color: #1f2937 !important;
+  padding: 10px 16px !important;
+}
+
+.editFormPhoneInput :global(.react-international-phone-country-selector-dropdown__list-item:hover) {
+  background: #f3f4f6 !important;
+}
+
+.editFormPhoneInput :global(.react-international-phone-country-selector-dropdown__list-item--selected) {
+  background: #e0e7ff !important;
+}
+
+.editFormPhoneInput :global(.react-international-phone-country-selector-dropdown__list-item--focused) {
+  background: #f3f4f6 !important;
+}
+
 .noData {
   text-align: center;
   padding: 40px;
@@ -631,6 +704,14 @@
   }
 
   .actionCell .toggleBtn {
+    padding: 2px 6px;
+    font-size: 14px;
+    min-width: auto;
+    line-height: 1;
+    margin-left: 0;
+  }
+
+  .actionCell .editBtn {
     padding: 2px 6px;
     font-size: 14px;
     min-width: auto;
