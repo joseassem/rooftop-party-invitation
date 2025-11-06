@@ -272,10 +272,11 @@
 }
 
 .tableContainer {
-  background: white;
-  border-radius: 12px;
+  background: transparent;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
+  margin-bottom: 30px;
 }
 
 .table {
@@ -360,6 +361,15 @@
   color: #1f2937;
   padding-bottom: 10px;
   border-bottom: 2px solid #e5e7eb;
+}
+
+/* +1 badge styling - applies to both mobile and desktop */
+.plusOneBadge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b82f6; /* Blue color */
+  margin-left: 8px;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
@@ -459,14 +469,6 @@
   /* PlusOne badge - hidden as separate cell in mobile */
   .plusOneCell {
     display: none;
-  }
-
-  .plusOneBadge {
-    font-size: 13px;
-    font-weight: 600;
-    color: #3b82f6; /* Blue color */
-    margin-left: 8px;
-    white-space: nowrap;
   }
 
   /* Email - left side, as link */
