@@ -37,6 +37,15 @@ export default function AdminDashboard() {
   const [emailFilterEmail, setEmailFilterEmail] = useState<'all' | 'sent' | 'not-sent'>('not-sent')
   
   const [message, setMessage] = useState('')
+  
+  // Estado para modal de edición
+  const [editingRsvp, setEditingRsvp] = useState<RSVP | null>(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    plusOne: false
+  })
 
   // Autenticación
   const handleLogin = async (e: React.FormEvent) => {
@@ -321,6 +330,75 @@ export default function AdminDashboard() {
     }
   }
 
+  // Abrir modal de edición
+  const openEditModal = (rsvp: RSVP) => {
+    setEditingRsvp(rsvp)
+    setEditForm({
+      name: rsvp.name,
+      email: rsvp.email,
+      phone: rsvp.phone,
+      plusOne: rsvp.plusOne
+    })
+  }
+
+  // Cerrar modal de edición
+  const closeEditModal = () => {
+    setEditingRsvp(null)
+    setEditForm({
+      name: '',
+      email: '',
+      phone: '',
+      plusOne: false
+    })
+  }
+
+  // Guardar cambios de edición
+  const saveEdit = async () => {
+    if (!editingRsvp) return
+
+    if (!editForm.name.trim() || !editForm.email.trim() || !editForm.phone.trim()) {
+      setMessage('❌ Nombre, email y teléfono son requeridos')
+      return
+    }
+
+    if (!confirm(`¿Guardar cambios para ${editingRsvp.name}?`)) {
+      return
+    }
+
+    setLoading(true)
+    setMessage('Guardando cambios...')
+    
+    try {
+      const authHeader = sessionStorage.getItem('admin_auth')
+      
+      const response = await fetch('/api/admin/update-rsvp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authHeader}`
+        },
+        body: JSON.stringify({
+          rsvpId: editingRsvp.id,
+          updates: editForm
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage(`✅ Datos actualizados para ${editForm.name}`)
+        closeEditModal()
+        await loadRSVPs()
+      } else {
+        setMessage(`❌ Error: ${data.error}`)
+      }
+    } catch (error) {
+      setMessage('❌ Error al guardar cambios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Cerrar sesión
   const handleLogout = () => {
     sessionStorage.removeItem('admin_auth')
@@ -509,6 +587,14 @@ export default function AdminDashboard() {
                     >
                       ❌
                     </button>
+                    <button
+                      onClick={() => openEditModal(rsvp)}
+                      disabled={loading}
+                      className={styles.editBtn}
+                      title="Editar datos"
+                    >
+                      ✏️
+                    </button>
                   </td>
                   <td className={styles.emailSentCell}>
                     {rsvp.emailSent ? (
@@ -574,6 +660,14 @@ export default function AdminDashboard() {
                     >
                       ✅
                     </button>
+                    <button
+                      onClick={() => openEditModal(rsvp)}
+                      disabled={loading}
+                      className={styles.editBtn}
+                      title="Editar datos"
+                    >
+                      ✏️
+                    </button>
                   </td>
                   <td className={styles.emailSentCell}>
                     {rsvp.emailSent ? (
@@ -607,6 +701,74 @@ export default function AdminDashboard() {
       {filteredRsvps.length === 0 && (
         <div className={styles.tableContainer}>
           <p className={styles.noData}>No hay RSVPs que coincidan con los filtros</p>
+        </div>
+      )}
+
+      {editingRsvp && (
+        <div className={styles.editModal} onClick={closeEditModal}>
+          <div className={styles.editModalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.editModalTitle}>Editar Confirmación</h2>
+            <form className={styles.editForm} onSubmit={(e) => { e.preventDefault(); saveEdit(); }}>
+              <div className={styles.editFormGroup}>
+                <label className={styles.editFormLabel}>Nombre *</label>
+                <input
+                  type="text"
+                  className={styles.editFormInput}
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  required
+                />
+              </div>
+              <div className={styles.editFormGroup}>
+                <label className={styles.editFormLabel}>Email *</label>
+                <input
+                  type="email"
+                  className={styles.editFormInput}
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className={styles.editFormGroup}>
+                <label className={styles.editFormLabel}>Teléfono *</label>
+                <input
+                  type="tel"
+                  className={styles.editFormInput}
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                  required
+                />
+              </div>
+              <div className={styles.editFormGroup}>
+                <div className={styles.editFormCheckboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="editPlusOne"
+                    className={styles.editFormCheckbox}
+                    checked={editForm.plusOne}
+                    onChange={(e) => setEditForm({...editForm, plusOne: e.target.checked})}
+                  />
+                  <label htmlFor="editPlusOne" className={styles.editFormLabel}>+1 Acompañante</label>
+                </div>
+              </div>
+              <div className={styles.editFormButtons}>
+                <button
+                  type="button"
+                  className={styles.editFormCancelBtn}
+                  onClick={closeEditModal}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={styles.editFormSaveBtn}
+                  disabled={loading}
+                >
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -370,6 +370,146 @@
   cursor: not-allowed;
 }
 
+.editBtn {
+  padding: 8px 12px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  margin-left: 6px;
+}
+
+.editBtn:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: scale(1.05);
+}
+
+.editBtn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.editModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.editModalCard {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.editModalTitle {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #1f2937;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editFormGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editFormLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.editFormInput {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.editFormInput:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.editFormCheckboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editFormCheckbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.editFormButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.editFormSaveBtn {
+  flex: 1;
+  padding: 12px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.editFormSaveBtn:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.editFormSaveBtn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.editFormCancelBtn {
+  flex: 1;
+  padding: 12px;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.editFormCancelBtn:hover {
+  background: #e5e7eb;
+}
+
 .noData {
   text-align: center;
   padding: 40px;
@@ -392,6 +532,15 @@
   color: #3b82f6; /* Blue color */
   margin-left: 8px;
   white-space: nowrap;
+}
+
+/* Desktop-specific styles */
+.nameCell {
+  font-weight: 600;
+}
+
+.phoneCell .phoneNumber {
+  margin-right: 8px;
 }
 
 @media (max-width: 768px) {
