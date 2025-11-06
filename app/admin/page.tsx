@@ -459,7 +459,7 @@ export default function AdminDashboard() {
                   <td className={styles.emailCell}>{rsvp.email}</td>
                   <td className={styles.phoneCell}>{rsvp.phone}</td>
                   <td className={styles.statusCell}>
-                    <span className={styles.confirmed}>✅ Confirmado</span>
+                    <span className={styles.confirmed}>✅</span>
                   </td>
                   <td className={styles.dateCell}>
                     📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                   <td className={styles.emailCell}>{rsvp.email}</td>
                   <td className={styles.phoneCell}>{rsvp.phone}</td>
                   <td className={styles.statusCell}>
-                    <span className={styles.cancelled}>❌ Cancelado</span>
+                    <span className={styles.cancelled}>❌</span>
                   </td>
                   <td className={styles.dateCell}>
                     📅 {new Date(rsvp.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}

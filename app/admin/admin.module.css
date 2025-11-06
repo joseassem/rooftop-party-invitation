@@ -382,6 +382,9 @@
   .tableContainer {
     overflow-x: visible;
     margin-bottom: 20px;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
   }
 
   /* Hide table header on mobile */
@@ -400,22 +403,22 @@
   /* Style each row as a card with grid layout */
   .table tbody tr {
     position: relative;
-    padding: 16px 16px 16px 16px;
-    margin-bottom: 12px;
+    padding: 12px 12px 10px 12px;
+    margin-bottom: 10px;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: auto;
-    gap: 8px 12px;
+    gap: 6px 10px;
     grid-template-areas:
-      "name name"
-      "email email"
-      "phone phone"
-      "plusone status"
-      "emailsent date";
+      "name name name"
+      "email email email"
+      "phone phone phone"
+      "plusone status emailsent"
+      "date date date";
   }
 
   .table tbody tr:hover {
@@ -440,15 +443,15 @@
   }
 
   .actionCell .sendBtn {
-    padding: 8px 12px;
-    font-size: 18px;
+    padding: 6px 10px;
+    font-size: 16px;
     min-width: auto;
   }
 
   /* Name - spans full width */
   .nameCell {
     grid-area: name;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
     color: #1f2937;
     padding-right: 50px; /* Space for action button */
@@ -457,41 +460,43 @@
   /* Email - spans full width */
   .emailCell {
     grid-area: email;
-    font-size: 14px;
+    font-size: 13px;
     color: #4b5563;
   }
 
   /* Phone - spans full width */
   .phoneCell {
     grid-area: phone;
-    font-size: 14px;
+    font-size: 13px;
     color: #4b5563;
   }
 
-  /* PlusOne - left column */
+  /* PlusOne - left column (3 columns layout) */
   .plusOneCell {
     grid-area: plusone;
-    font-size: 13px;
+    font-size: 12px;
   }
 
-  /* Status - right column */
+  /* Status - middle column (3 columns layout) */
   .statusCell {
     grid-area: status;
-    font-size: 13px;
+    font-size: 14px;
+    text-align: center;
   }
 
-  /* Email Sent - left column */
+  /* Email Sent - right column (3 columns layout) */
   .emailSentCell {
     grid-area: emailsent;
-    font-size: 12px;
+    font-size: 11px;
     color: #6b7280;
+    text-align: right;
   }
 
-  /* Registration Date - right column */
+  /* Registration Date - spans full width at bottom */
   .dateCell {
     grid-area: date;
-    font-size: 12px;
-    color: #6b7280;
+    font-size: 11px;
+    color: #9ca3af;
   }
 
   /* Adjust badge sizes for mobile */
@@ -499,7 +504,7 @@
   .cancelledBadge,
   .emailSentBadge,
   .emailNotSentBadge {
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 11px;
+    padding: 3px 6px;
   }
 }
