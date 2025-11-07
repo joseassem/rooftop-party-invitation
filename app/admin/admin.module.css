@@ -72,37 +72,93 @@
 .dashboard {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 20px;
+  padding-top: 80px; /* Espacio para header fijo */
 }
 
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   background: white;
-  padding: 20px 30px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  height: 64px;
 }
 
-.header h1 {
-  margin: 0 0 5px 0;
-  color: #333;
-  font-size: 28px;
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.header p {
+.headerTitle {
   margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.headerSubtitle {
   color: #666;
   font-size: 14px;
+  padding-left: 16px;
+  border-left: 2px solid #e0e0e0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewSiteBtn {
+  padding: 8px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewSiteBtn:hover {
+  background: #059669;
+}
+
+.logoutBtn {
+  padding: 8px 16px;
+  background: transparent;
+  color: #666;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logoutBtn:hover {
+  background: #f5f5f5;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 /* Tabs */
 .tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin: 0 20px 20px 20px;
   background: white;
   padding: 10px;
   border-radius: 12px;
@@ -305,22 +361,42 @@
   .configSaveBtn {
     width: 100%;
   }
-}
 
-.logoutBtn {
-  padding: 10px 20px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s;
-}
+  /* Header responsive */
+  .header {
+    padding: 12px 16px;
+    height: auto;
+  }
 
-.logoutBtn:hover {
-  background: #b91c1c;
+  .headerLeft {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .headerTitle {
+    font-size: 16px;
+  }
+
+  .headerSubtitle {
+    padding-left: 0;
+    border-left: none;
+    font-size: 12px;
+  }
+
+  .headerActions {
+    gap: 8px;
+  }
+
+  .viewSiteBtn,
+  .logoutBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .dashboard {
+    padding-top: 100px; /* Más espacio para header en móvil */
+  }
 }
 
 .stats {

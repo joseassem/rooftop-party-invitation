@@ -619,13 +619,24 @@ export default function AdminDashboard() {
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
-        <div>
-          <h1>📊 Admin Dashboard</h1>
-          <p>{eventConfig.event.title}</p>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.headerTitle}>Admin Dashboard</h1>
+          <span className={styles.headerSubtitle}>{eventConfig.event.title}</span>
         </div>
-        <button onClick={handleLogout} className={styles.logoutBtn}>
-          Cerrar Sesión
-        </button>
+        <div className={styles.headerActions}>
+          <a 
+            href="/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={styles.viewSiteBtn}
+            title="Ver página de RSVP"
+          >
+            🌐 Ver Sitio
+          </a>
+          <button onClick={handleLogout} className={styles.logoutBtn}>
+            Cerrar Sesión
+          </button>
+        </div>
       </header>
 
       {/* Tabs */}
