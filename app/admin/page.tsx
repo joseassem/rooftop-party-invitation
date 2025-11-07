@@ -640,7 +640,7 @@ export default function AdminDashboard() {
               className={styles.exportBtn}
               title="Exportar lista de invitados en PDF"
             >
-              📄 Exportar Lista PDF
+              📄 Exportar Lista
             </button>
           </div>
         </div>

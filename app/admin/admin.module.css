@@ -168,6 +168,18 @@
   .statCard p {
     font-size: 10px;
   }
+
+  .filterRow {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .bulkBtn,
+  .exportBtn {
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 10px 15px;
+  }
 }
 
 .controls {
