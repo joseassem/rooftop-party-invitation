@@ -491,7 +491,9 @@ export default function AdminDashboard() {
       { align: 'center' }
     )
     
-    doc.save(`lista-invitados-${eventConfig.event.id}.pdf`)
+    // Nombre del archivo con subtitle normalizado (sin espacios ni caracteres especiales)
+    const fileName = `lista-invitados-${eventConfig.event.subtitle.toLowerCase().replace(/\s+/g, '-')}.pdf`
+    doc.save(fileName)
   }
 
   // Stats
