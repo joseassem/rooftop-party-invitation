@@ -494,101 +494,6 @@ export default function AdminDashboard() {
     doc.save(`lista-invitados-${eventConfig.event.id}.pdf`)
   }
 
-  // Exportar lista de check-in (para la entrada del evento)
-  const exportCheckInList = () => {
-    const doc = new jsPDF()
-    const confirmedRsvps = rsvps.filter(r => r.status === 'confirmed')
-    
-    // Header simple y funcional
-    doc.setFillColor(34, 197, 94) // Verde
-    doc.rect(0, 0, 210, 35, 'F')
-    
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.text('LISTA DE CHECK-IN', 105, 15, { align: 'center' })
-    
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'normal')
-    doc.text(eventConfig.event.title, 105, 23, { align: 'center' })
-    doc.text(`${eventConfig.event.date} - ${eventConfig.event.location}`, 105, 30, { align: 'center' })
-    
-    // Instrucciones
-    doc.setTextColor(0, 0, 0)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'italic')
-    doc.text('Marcar con ✓ cuando llegue el invitado', 14, 43)
-    
-    // Stats
-    const totalGuests = confirmedRsvps.length + confirmedRsvps.filter(r => r.plusOne).length
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.text(`Total esperado: ${confirmedRsvps.length} confirmaciones - ${totalGuests} personas`, 14, 52)
-    
-    // Tabla para check-in con checkbox
-    const tableData = confirmedRsvps.map((rsvp, index) => [
-      index + 1,
-      rsvp.name,
-      rsvp.phone,
-      rsvp.plusOne ? 'Sí (+1)' : 'No',
-      '☐', // Checkbox vacío
-      '___________' // Espacio para hora
-    ])
-    
-    autoTable(doc, {
-      startY: 60,
-      head: [['#', 'Nombre', 'Teléfono', '+1', '✓ Llegó', 'Hora']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [34, 197, 94],
-        textColor: 255,
-        fontSize: 10,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      bodyStyles: {
-        fontSize: 11,
-        cellPadding: 6,
-        minCellHeight: 12
-      },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 12 },
-        1: { cellWidth: 65, fontStyle: 'bold' },
-        2: { cellWidth: 40 },
-        3: { halign: 'center', cellWidth: 20 },
-        4: { halign: 'center', cellWidth: 20, fontSize: 14 },
-        5: { halign: 'center', cellWidth: 30 }
-      },
-      alternateRowStyles: {
-        fillColor: [240, 253, 244]
-      }
-    })
-    
-    // Footer con contador
-    const pageCount = (doc as any).internal.getNumberOfPages()
-    doc.setFontSize(8)
-    doc.setTextColor(128, 128, 128)
-    doc.text(
-      `Check-in list generada el ${new Date().toLocaleDateString('es-MX')} - Página ${pageCount}`,
-      105,
-      doc.internal.pageSize.height - 10,
-      { align: 'center' }
-    )
-    
-    // Contadores en la parte inferior
-    const finalY = (doc as any).lastAutoTable.finalY + 15
-    doc.setFontSize(10)
-    doc.setTextColor(0, 0, 0)
-    doc.setFont('helvetica', 'bold')
-    doc.text('RESUMEN:', 14, finalY)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Llegaron: _____ / ${confirmedRsvps.length}`, 14, finalY + 7)
-    doc.text(`Total personas: _____ / ${totalGuests}`, 14, finalY + 14)
-    
-    doc.save(`checkin-${eventConfig.event.id}.pdf`)
-  }
-
   // Stats
   const confirmedRsvps = rsvps.filter(r => r.status === 'confirmed')
   const stats = {
@@ -673,29 +578,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Botones de Exportación */}
-      <div className={styles.exportSection}>
-        <h3>📄 Exportar Listas</h3>
-        <div className={styles.exportButtons}>
-          <button 
-            onClick={exportInformativeList} 
-            className={styles.exportBtn}
-            disabled={stats.confirmed === 0}
-          >
-            📋 Lista Informativa
-            <span className={styles.exportBtnDesc}>Detalles completos para compartir</span>
-          </button>
-          <button 
-            onClick={exportCheckInList} 
-            className={styles.exportBtn}
-            disabled={stats.confirmed === 0}
-          >
-            ✅ Lista Check-In
-            <span className={styles.exportBtnDesc}>Para la entrada del evento</span>
-          </button>
-        </div>
-      </div>
-
       {/* Controles */}
       <div className={styles.controls}>
         <div className={styles.filterSection}>
@@ -750,6 +632,15 @@ export default function AdminDashboard() {
               className={styles.bulkBtn}
             >
               📧 Enviar Emails ({emailTargetRsvps.length})
+            </button>
+
+            <button
+              onClick={exportInformativeList}
+              disabled={stats.confirmed === 0}
+              className={styles.exportBtn}
+              title="Exportar lista de invitados en PDF"
+            >
+              📄 Exportar Lista PDF
             </button>
           </div>
         </div>
