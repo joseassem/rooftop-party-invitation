@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import eventConfig from '../event-config.json'
 import RSVPModal from './components/RSVPModal'
@@ -8,7 +8,50 @@ import styles from './page.module.css'
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const { event, theme } = eventConfig
+  const [config, setConfig] = useState(eventConfig)
+  const { event, theme } = config
+
+  // Cargar configuración dinámica al montar el componente
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/event-settings', {
+          cache: 'no-store'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.settings) {
+            // Convertir EventSettings a formato del JSON
+            const settings = data.settings
+            setConfig({
+              ...eventConfig,
+              event: {
+                ...eventConfig.event,
+                title: settings.title,
+                subtitle: settings.subtitle,
+                date: settings.date,
+                time: settings.time,
+                location: settings.location,
+                details: settings.details,
+                price: settings.price.enabled 
+                  ? `💵 Cuota de recuperación: $${settings.price.amount}` 
+                  : '',
+                capacity: settings.capacity.enabled
+                  ? `⚠️ Cupo limitado: ${settings.capacity.limit} personas`
+                  : '',
+                backgroundImage: settings.backgroundImage.url || eventConfig.event.backgroundImage
+              }
+            })
+          }
+        }
+      } catch (error) {
+        console.log('Usando configuración por defecto:', error)
+      }
+    }
+
+    loadConfig()
+  }, [])
 
   return (
     <main className={styles.main}>
@@ -38,8 +81,11 @@ export default function Home() {
         >
           {/* Título principal con efecto neón */}
           <h1 className={styles.title}>
-            <span className={styles.titleLine1}>ROOFTOP</span>
-            <span className={styles.titleLine2}>PARTY</span>
+            {event.title.split(' ').map((word, index) => (
+              <span key={index} className={index === 0 ? styles.titleLine1 : styles.titleLine2}>
+                {word}
+              </span>
+            ))}
           </h1>
 
           {/* Subtítulo */}
