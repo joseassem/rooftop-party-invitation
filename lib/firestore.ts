@@ -283,5 +283,75 @@ export async function updateRSVP(rsvpId: string, data: Partial<Pick<RSVP, 'name'
   }
 }
 
-export { db, collectionName }
+// ============================================
+// Event Settings Management
+// ============================================
 
+import type { EventSettings } from '@/types/event-settings'
+
+const settingsCollectionName = 'eventSettings'
+
+/**
+ * Obtener la configuración del evento
+ */
+export async function getEventSettings(eventId: string): Promise<EventSettings | null> {
+  try {
+    const snapshot = await db.collection(settingsCollectionName)
+      .where('eventId', '==', eventId)
+      .limit(1)
+      .get()
+
+    if (snapshot.empty) {
+      return null
+    }
+
+    const doc = snapshot.docs[0]
+    return {
+      id: doc.id,
+      ...doc.data()
+    } as EventSettings
+  } catch (error) {
+    console.error('Error al obtener configuración del evento:', error)
+    throw error
+  }
+}
+
+/**
+ * Guardar o actualizar la configuración del evento
+ */
+export async function saveEventSettings(settings: Omit<EventSettings, 'id' | 'updatedAt'>): Promise<EventSettings> {
+  try {
+    const data = {
+      ...settings,
+      updatedAt: new Date().toISOString()
+    }
+
+    // Buscar si ya existe una configuración para este evento
+    const existingSnapshot = await db.collection(settingsCollectionName)
+      .where('eventId', '==', settings.eventId)
+      .limit(1)
+      .get()
+
+    let docRef
+
+    if (!existingSnapshot.empty) {
+      // Actualizar existente
+      docRef = existingSnapshot.docs[0].ref
+      await docRef.update(data)
+    } else {
+      // Crear nuevo
+      docRef = await db.collection(settingsCollectionName).add(data)
+    }
+
+    const updatedDoc = await docRef.get()
+    return {
+      id: docRef.id,
+      ...updatedDoc.data()
+    } as EventSettings
+  } catch (error) {
+    console.error('Error al guardar configuración del evento:', error)
+    throw error
+  }
+}
+
+export { db, collectionName }

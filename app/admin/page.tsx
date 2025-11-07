@@ -31,6 +31,24 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   
+  // Estado para tabs
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'config'>('dashboard')
+  
+  // Estado para configuración del evento
+  const [configForm, setConfigForm] = useState({
+    title: eventConfig.event.title,
+    subtitle: eventConfig.event.subtitle,
+    date: eventConfig.event.date,
+    time: eventConfig.event.time,
+    location: eventConfig.event.location,
+    details: eventConfig.event.details,
+    priceEnabled: true,
+    priceAmount: 250,
+    capacityEnabled: true,
+    capacityLimit: 100,
+    backgroundImage: eventConfig.event.backgroundImage
+  })
+  
   // Filtros para MOSTRAR en tabla
   const [displayFilterStatus, setDisplayFilterStatus] = useState<'all' | 'confirmed' | 'cancelled'>('all')
   const [displayFilterPlusOne, setDisplayFilterPlusOne] = useState<'all' | 'yes' | 'no'>('all')
@@ -403,6 +421,64 @@ export default function AdminDashboard() {
     }
   }
 
+  // Guardar configuración del evento
+  const saveEventConfig = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+
+    try {
+      const authHeader = sessionStorage.getItem('admin_auth')
+      if (!authHeader) {
+        setMessage('❌ No autenticado')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/admin/event-settings/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authHeader}`
+        },
+        body: JSON.stringify({
+          eventId: eventConfig.event.id,
+          title: configForm.title,
+          subtitle: configForm.subtitle,
+          date: configForm.date,
+          time: configForm.time,
+          location: configForm.location,
+          details: configForm.details,
+          price: {
+            enabled: configForm.priceEnabled,
+            amount: configForm.priceAmount,
+            currency: 'MXN'
+          },
+          capacity: {
+            enabled: configForm.capacityEnabled,
+            limit: configForm.capacityLimit
+          },
+          backgroundImage: {
+            url: configForm.backgroundImage,
+            uploadedAt: null
+          }
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage('✅ Configuración guardada correctamente')
+      } else {
+        setMessage(`❌ Error: ${data.message}`)
+      }
+    } catch (error) {
+      setMessage('❌ Error al guardar configuración')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Cerrar sesión
   const handleLogout = () => {
     sessionStorage.removeItem('admin_auth')
@@ -552,8 +628,27 @@ export default function AdminDashboard() {
         </button>
       </header>
 
-      {/* Estadísticas */}
-      <div className={styles.stats}>
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button 
+          className={`${styles.tab} ${activeTab === 'dashboard' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          📊 Dashboard
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'config' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('config')}
+        >
+          ⚙️ Configuración
+        </button>
+      </div>
+
+      {/* Contenido del Dashboard */}
+      {activeTab === 'dashboard' && (
+        <>
+          {/* Estadísticas */}
+          <div className={styles.stats}>
         <div className={styles.statCard}>
           <h3>{stats.totalGuests}</h3>
           <p>👥 Invitados</p>
@@ -799,6 +894,189 @@ export default function AdminDashboard() {
       {filteredRsvps.length === 0 && (
         <div className={styles.tableContainer}>
           <p className={styles.noData}>No hay RSVPs que coincidan con los filtros</p>
+        </div>
+      )}
+        </>
+      )}
+
+      {/* Contenido de Configuración */}
+      {activeTab === 'config' && (
+        <div className={styles.configContainer}>
+          <h2>⚙️ Configuración del Evento</h2>
+          <p className={styles.configDescription}>
+            Edita los detalles del evento. Los cambios se guardarán en la base de datos.
+          </p>
+
+          <form className={styles.configForm} onSubmit={saveEventConfig}>
+            <div className={styles.configSection}>
+              <h3 className={styles.configSectionTitle}>📝 Información Básica</h3>
+              
+              <div className={styles.configFormGroup}>
+                <label className={styles.configLabel}>Título del Evento *</label>
+                <input
+                  type="text"
+                  className={styles.configInput}
+                  value={configForm.title}
+                  onChange={(e) => setConfigForm({...configForm, title: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className={styles.configFormGroup}>
+                <label className={styles.configLabel}>Subtítulo</label>
+                <input
+                  type="text"
+                  className={styles.configInput}
+                  value={configForm.subtitle}
+                  onChange={(e) => setConfigForm({...configForm, subtitle: e.target.value})}
+                />
+              </div>
+
+              <div className={styles.configFormRow}>
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Fecha *</label>
+                  <input
+                    type="text"
+                    className={styles.configInput}
+                    value={configForm.date}
+                    onChange={(e) => setConfigForm({...configForm, date: e.target.value})}
+                    placeholder="Ej: Sábado 15 de Febrero"
+                    required
+                  />
+                </div>
+
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Hora *</label>
+                  <input
+                    type="text"
+                    className={styles.configInput}
+                    value={configForm.time}
+                    onChange={(e) => setConfigForm({...configForm, time: e.target.value})}
+                    placeholder="Ej: 7:00 PM"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className={styles.configFormGroup}>
+                <label className={styles.configLabel}>Ubicación *</label>
+                <input
+                  type="text"
+                  className={styles.configInput}
+                  value={configForm.location}
+                  onChange={(e) => setConfigForm({...configForm, location: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className={styles.configFormGroup}>
+                <label className={styles.configLabel}>Detalles del Evento</label>
+                <textarea
+                  className={styles.configTextarea}
+                  value={configForm.details}
+                  onChange={(e) => setConfigForm({...configForm, details: e.target.value})}
+                  rows={4}
+                  placeholder="Descripción adicional del evento"
+                />
+              </div>
+            </div>
+
+            <div className={styles.configSection}>
+              <h3 className={styles.configSectionTitle}>💵 Precio</h3>
+              
+              <div className={styles.configToggleGroup}>
+                <input
+                  type="checkbox"
+                  id="priceEnabled"
+                  className={styles.configCheckbox}
+                  checked={configForm.priceEnabled}
+                  onChange={(e) => setConfigForm({...configForm, priceEnabled: e.target.checked})}
+                />
+                <label htmlFor="priceEnabled" className={styles.configToggleLabel}>
+                  Mostrar cuota de recuperación
+                </label>
+              </div>
+
+              {configForm.priceEnabled && (
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Monto (MXN) *</label>
+                  <input
+                    type="number"
+                    className={styles.configInput}
+                    value={configForm.priceAmount}
+                    onChange={(e) => setConfigForm({...configForm, priceAmount: parseInt(e.target.value) || 0})}
+                    min="0"
+                    required={configForm.priceEnabled}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className={styles.configSection}>
+              <h3 className={styles.configSectionTitle}>👥 Capacidad</h3>
+              
+              <div className={styles.configToggleGroup}>
+                <input
+                  type="checkbox"
+                  id="capacityEnabled"
+                  className={styles.configCheckbox}
+                  checked={configForm.capacityEnabled}
+                  onChange={(e) => setConfigForm({...configForm, capacityEnabled: e.target.checked})}
+                />
+                <label htmlFor="capacityEnabled" className={styles.configToggleLabel}>
+                  Mostrar cupo limitado
+                </label>
+              </div>
+
+              {configForm.capacityEnabled && (
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Límite de Personas *</label>
+                  <input
+                    type="number"
+                    className={styles.configInput}
+                    value={configForm.capacityLimit}
+                    onChange={(e) => setConfigForm({...configForm, capacityLimit: parseInt(e.target.value) || 0})}
+                    min="1"
+                    required={configForm.capacityEnabled}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className={styles.configSection}>
+              <h3 className={styles.configSectionTitle}>🖼️ Imagen de Fondo</h3>
+              
+              <div className={styles.configFormGroup}>
+                <label className={styles.configLabel}>URL de la Imagen</label>
+                <input
+                  type="url"
+                  className={styles.configInput}
+                  value={configForm.backgroundImage}
+                  onChange={(e) => setConfigForm({...configForm, backgroundImage: e.target.value})}
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                />
+                <p className={styles.configHelper}>
+                  💡 Tip: Sube tu imagen a un servicio como Imgur o usa una URL directa
+                </p>
+              </div>
+
+              {configForm.backgroundImage && (
+                <div className={styles.configImagePreview}>
+                  <img src={configForm.backgroundImage} alt="Preview" />
+                </div>
+              )}
+            </div>
+
+            <div className={styles.configFormButtons}>
+              <button
+                type="submit"
+                className={styles.configSaveBtn}
+                disabled={loading}
+              >
+                {loading ? 'Guardando...' : '💾 Guardar Configuración'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

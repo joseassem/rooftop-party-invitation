@@ -98,6 +98,215 @@
   font-size: 14px;
 }
 
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 20px;
+  background: transparent;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tab:hover {
+  background: #f5f5f5;
+  border-color: #667eea;
+}
+
+.tabActive {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.tabActive:hover {
+  background: #5568d3;
+  border-color: #5568d3;
+}
+
+/* Configuración */
+.configContainer {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.configContainer h2 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.configDescription {
+  margin: 0 0 30px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.configForm {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.configSection {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.configSection:last-of-type {
+  border-bottom: none;
+}
+
+.configSectionTitle {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.configFormGroup {
+  margin-bottom: 20px;
+}
+
+.configFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.configLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.configInput,
+.configTextarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.3s;
+}
+
+.configInput:focus,
+.configTextarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.configTextarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.configToggleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.configCheckbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.configToggleLabel {
+  margin: 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.configHelper {
+  margin: 8px 0 0 0;
+  color: #666;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.configImagePreview {
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 300px;
+}
+
+.configImagePreview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.configFormButtons {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 20px;
+}
+
+.configSaveBtn {
+  padding: 12px 30px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.configSaveBtn:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.configSaveBtn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive para configuración */
+@media (max-width: 768px) {
+  .configContainer {
+    padding: 20px;
+  }
+
+  .configFormRow {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .configSaveBtn {
+    width: 100%;
+  }
+}
+
 .logoutBtn {
   padding: 10px 20px;
   background: #dc2626;
