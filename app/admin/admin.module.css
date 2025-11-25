@@ -374,18 +374,11 @@
 
   /* Header responsive */
   .header {
-    padding: 12px;
-    height: 64px;
-    flex-wrap: nowrap;
-  }
-
-  .headerLeft {
-    gap: 0;
-    min-width: 0;
+    padding: 10px 12px;
   }
 
   .headerTitle {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .headerSubtitle {
@@ -393,22 +386,17 @@
   }
 
   .headerActions {
-    gap: 8px;
-    flex-shrink: 0;
+    gap: 6px;
   }
 
   .viewSiteBtn {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 13px;
   }
 
   .logoutBtn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  .dashboard {
-    padding-top: 80px;
+    padding: 6px 10px;
+    font-size: 13px;
   }
 }
 
