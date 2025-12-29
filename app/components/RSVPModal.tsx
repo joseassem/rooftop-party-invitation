@@ -9,9 +9,10 @@ import styles from './RSVPModal.module.css'
 interface RSVPModalProps {
   isOpen: boolean
   onClose: () => void
+  eventSlug?: string  // Optional for backward compatibility
 }
 
-export default function RSVPModal({ isOpen, onClose }: RSVPModalProps) {
+export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,7 +35,7 @@ export default function RSVPModal({ isOpen, onClose }: RSVPModalProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, eventSlug }),
       })
 
       const data = await response.json()

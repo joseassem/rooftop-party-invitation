@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import eventConfig from '@/event-config.json'
+import { isDatabaseConfigured } from '@/lib/db'
 
 // Mock storage para modo demo
 const mockRsvps: any[] = []
@@ -7,7 +8,7 @@ const mockRsvps: any[] = []
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, phone, plusOne = false } = body
+    const { name, email, phone, plusOne = false, eventSlug } = body
 
     // Validar campos requeridos
     if (!name || !email || !phone) {
@@ -26,19 +27,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar si Google Cloud Firestore está configurado
-    const hasFirestoreConfig = process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL
+    // Determine eventId: use eventSlug if provided, otherwise fall back to static config
+    let eventId = eventConfig.event.id
 
-    if (hasFirestoreConfig) {
-      // Usar Google Cloud Firestore real
-      const { saveRSVP } = await import('@/lib/firestore')
-      
+    // Check if database is configured
+    if (isDatabaseConfigured()) {
+      const { saveRSVP, getEventBySlug } = await import('@/lib/queries')
+
+      // If eventSlug was provided, look up the event
+      if (eventSlug) {
+        const event = await getEventBySlug(eventSlug)
+        if (event) {
+          eventId = event.slug
+
+          // Check if event accepts RSVPs
+          if (!event.isActive) {
+            return NextResponse.json(
+              { error: 'Las inscripciones para este evento están cerradas' },
+              { status: 400 }
+            )
+          }
+        } else {
+          return NextResponse.json(
+            { error: 'Evento no encontrado' },
+            { status: 404 }
+          )
+        }
+      }
+
       const rsvp = await saveRSVP({
         name,
         email,
         phone,
         plusOne,
-        eventId: eventConfig.event.id,
+        eventId,
       })
 
       return NextResponse.json(
@@ -51,19 +73,19 @@ export async function POST(request: NextRequest) {
       )
     } else {
       // Modo demo - guardar en memoria
-      console.log('⚠️  Modo DEMO - Configura Google Cloud Firestore para producción')
-      
+      console.log('⚠️  Modo DEMO - Configura DATABASE_URL para producción')
+
       const mockRsvp = {
         id: `demo-${Date.now()}`,
         name,
         email,
         phone,
         plusOne,
-        eventId: eventConfig.event.id,
+        eventId: eventSlug || eventConfig.event.id,
         createdAt: new Date().toISOString(),
         status: 'confirmed'
       }
-      
+
       mockRsvps.push(mockRsvp)
 
       return NextResponse.json(
@@ -71,7 +93,7 @@ export async function POST(request: NextRequest) {
           success: true,
           message: '¡RSVP confirmado!',
           rsvp: mockRsvp,
-          note: 'Modo Demo: Configura Google Cloud Firestore en .env.local para guardar datos permanentemente'
+          note: 'Modo Demo: Configura DATABASE_URL en .env.local para guardar datos permanentemente'
         },
         { status: 201 }
       )
@@ -97,23 +119,27 @@ export async function POST(request: NextRequest) {
 // Endpoint para obtener todos los RSVPs
 export async function GET(request: NextRequest) {
   try {
-    const hasFirestoreConfig = process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL
+    const { searchParams } = new URL(request.url)
+    const eventId = searchParams.get('eventId') || eventConfig.event.id
 
-    if (hasFirestoreConfig) {
-      const { getRSVPsByEvent } = await import('@/lib/firestore')
-      const rsvps = await getRSVPsByEvent(eventConfig.event.id)
+    if (isDatabaseConfigured()) {
+      const { getRSVPsByEvent } = await import('@/lib/queries')
+      const rsvps = await getRSVPsByEvent(eventId)
 
       return NextResponse.json({
         success: true,
         count: rsvps.length,
         rsvps,
+        eventId,
       })
     } else {
-      // Modo demo
+      // Modo demo - filter by eventId
+      const filtered = mockRsvps.filter(r => r.eventId === eventId)
       return NextResponse.json({
         success: true,
-        count: mockRsvps.length,
-        rsvps: mockRsvps,
+        count: filtered.length,
+        rsvps: filtered,
+        eventId,
         note: 'Modo Demo: Datos en memoria temporal'
       })
     }

@@ -26,10 +26,10 @@ if (!admin.apps.length) {
   try {
     const privateKey = process.env.GOOGLE_CLOUD_PRIVATE_KEY
     // Manejar tanto \\n como \n en la private key
-    const formattedKey = privateKey?.includes('\\n') 
+    const formattedKey = privateKey?.includes('\\n')
       ? privateKey.replace(/\\n/g, '\n')
       : privateKey
-    
+
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
@@ -89,11 +89,11 @@ export async function saveRSVP(rsvp: Omit<RSVP, 'id' | 'createdAt' | 'status'>) 
     }
 
     const docRef = await collection.add(newRsvp)
-    
+
     // Generar y guardar token de cancelación
     const cancelToken = generateCancelToken(docRef.id, rsvp.email)
     await docRef.update({ cancelToken })
-    
+
     return {
       id: docRef.id,
       ...newRsvp,
@@ -109,7 +109,7 @@ export async function saveRSVP(rsvp: Omit<RSVP, 'id' | 'createdAt' | 'status'>) 
 export async function getRSVPsByEvent(eventId: string) {
   try {
     const collection = db.collection(collectionName)
-    
+
     // Query sin orderBy para evitar error de índice compuesto
     const snapshot = await collection
       .where('eventId', '==', eventId)
@@ -159,7 +159,7 @@ export async function getRSVPById(rsvpId: string): Promise<RSVP | null> {
 export async function getEventStats(eventId: string) {
   try {
     const collection = db.collection(collectionName)
-    
+
     const snapshot = await collection
       .where('eventId', '==', eventId)
       .get()
@@ -200,7 +200,7 @@ export async function recordEmailSent(rsvpId: string, type: 'confirmation' | 're
   try {
     const docRef = db.collection(collectionName).doc(rsvpId)
     const doc = await docRef.get()
-    
+
     if (!doc.exists) {
       throw new Error('RSVP no encontrado')
     }
@@ -233,13 +233,13 @@ export async function cancelRSVP(rsvpId: string, token: string) {
   try {
     const docRef = db.collection(collectionName).doc(rsvpId)
     const doc = await docRef.get()
-    
+
     if (!doc.exists) {
       throw new Error('RSVP no encontrado')
     }
 
     const rsvp = doc.data() as RSVP
-    
+
     // Validar token
     if (!validateCancelToken(token, rsvpId, rsvp.email)) {
       throw new Error('Token inválido')
@@ -265,7 +265,7 @@ export async function updateRSVP(rsvpId: string, data: Partial<Pick<RSVP, 'name'
   try {
     const docRef = db.collection(collectionName).doc(rsvpId)
     const doc = await docRef.get()
-    
+
     if (!doc.exists) {
       throw new Error('RSVP no encontrado')
     }
@@ -355,3 +355,172 @@ export async function saveEventSettings(settings: Omit<EventSettings, 'id' | 'up
 }
 
 export { db, collectionName }
+
+// ============================================
+// Events Management (Multi-Party Support)
+// ============================================
+
+import type { Event, CreateEventInput, UpdateEventInput } from '@/types/event'
+
+const eventsCollectionName = 'events'
+
+/**
+ * Create a new event/party
+ */
+export async function createEvent(input: CreateEventInput): Promise<Event> {
+  try {
+    // Check if slug already exists
+    const existingEvent = await getEventBySlug(input.slug)
+    if (existingEvent) {
+      throw new Error('Ya existe un evento con este slug')
+    }
+
+    const event: Omit<Event, 'id'> = {
+      ...input,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const docRef = await db.collection(eventsCollectionName).add(event)
+
+    return {
+      id: docRef.id,
+      ...event
+    }
+  } catch (error) {
+    console.error('Error creating event:', error)
+    throw error
+  }
+}
+
+/**
+ * Get event by URL slug
+ */
+export async function getEventBySlug(slug: string): Promise<Event | null> {
+  try {
+    const snapshot = await db.collection(eventsCollectionName)
+      .where('slug', '==', slug)
+      .limit(1)
+      .get()
+
+    if (snapshot.empty) {
+      return null
+    }
+
+    const doc = snapshot.docs[0]
+    return {
+      id: doc.id,
+      ...doc.data()
+    } as Event
+  } catch (error) {
+    console.error('Error getting event by slug:', error)
+    throw error
+  }
+}
+
+/**
+ * Get event by Firestore document ID
+ */
+export async function getEventById(eventId: string): Promise<Event | null> {
+  try {
+    const doc = await db.collection(eventsCollectionName).doc(eventId).get()
+
+    if (!doc.exists) {
+      return null
+    }
+
+    return {
+      id: doc.id,
+      ...doc.data()
+    } as Event
+  } catch (error) {
+    console.error('Error getting event by ID:', error)
+    throw error
+  }
+}
+
+/**
+ * Get all events (optionally filter by active status)
+ */
+export async function getAllEvents(activeOnly: boolean = false): Promise<Event[]> {
+  try {
+    let query = db.collection(eventsCollectionName).orderBy('createdAt', 'desc')
+
+    // Note: Firestore requires an index for compound queries
+    // For now, we filter in memory if activeOnly is true
+    const snapshot = await query.get()
+
+    let events = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Event[]
+
+    if (activeOnly) {
+      events = events.filter(e => e.isActive)
+    }
+
+    return events
+  } catch (error) {
+    console.error('Error getting all events:', error)
+    throw error
+  }
+}
+
+/**
+ * Update an existing event
+ */
+export async function updateEvent(eventId: string, updates: UpdateEventInput): Promise<Event> {
+  try {
+    const docRef = db.collection(eventsCollectionName).doc(eventId)
+    const doc = await docRef.get()
+
+    if (!doc.exists) {
+      throw new Error('Evento no encontrado')
+    }
+
+    const updateData = {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    }
+
+    await docRef.update(updateData)
+
+    const updatedDoc = await docRef.get()
+    return {
+      id: docRef.id,
+      ...updatedDoc.data()
+    } as Event
+  } catch (error) {
+    console.error('Error updating event:', error)
+    throw error
+  }
+}
+
+/**
+ * Delete an event (soft delete by setting isActive to false, or hard delete)
+ */
+export async function deleteEvent(eventId: string, hardDelete: boolean = false): Promise<boolean> {
+  try {
+    const docRef = db.collection(eventsCollectionName).doc(eventId)
+    const doc = await docRef.get()
+
+    if (!doc.exists) {
+      throw new Error('Evento no encontrado')
+    }
+
+    if (hardDelete) {
+      await docRef.delete()
+    } else {
+      await docRef.update({
+        isActive: false,
+        updatedAt: new Date().toISOString()
+      })
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error deleting event:', error)
+    throw error
+  }
+}
+
