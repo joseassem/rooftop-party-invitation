@@ -37,7 +37,7 @@ export default function AdminDashboard() {
 
   // Estado para multi-party
   const [events, setEvents] = useState<Event[]>([])
-  const [selectedEventSlug, setSelectedEventSlug] = useState<string>(eventConfig.event.id)
+  const [selectedEventId, setSelectedEventId] = useState<string>(eventConfig.event.id)
   const [homeEventId, setHomeEventId] = useState<string>('')
 
 
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
   const loadRSVPs = async (eventId?: string) => {
     setLoading(true)
     try {
-      const targetEventId = eventId || selectedEventSlug
+      const targetEventId = eventId || selectedEventId
       console.log('🔄 Cargando RSVPs para evento:', targetEventId)
 
       // Cargar RSVPs desde la API con filtro por evento
@@ -290,17 +290,17 @@ export default function AdminDashboard() {
 
   // Cargar configuración cuando cambia el evento seleccionado
   useEffect(() => {
-    if (isAuthenticated && selectedEventSlug) {
-      loadEventConfig(selectedEventSlug)
+    if (isAuthenticated && selectedEventId) {
+      loadEventConfig(selectedEventId)
     }
-  }, [selectedEventSlug, isAuthenticated])
+  }, [selectedEventId, isAuthenticated])
 
   // Recargar RSVPs cuando cambia el evento seleccionado
   useEffect(() => {
-    if (isAuthenticated && selectedEventSlug) {
-      loadRSVPs(selectedEventSlug)
+    if (isAuthenticated && selectedEventId) {
+      loadRSVPs(selectedEventId)
     }
-  }, [selectedEventSlug, isAuthenticated])
+  }, [selectedEventId, isAuthenticated])
 
   // Filtrar RSVPs para MOSTRAR en tabla
   useEffect(() => {
@@ -602,7 +602,7 @@ export default function AdminDashboard() {
       }
 
       const requestBody = {
-        eventId: selectedEventSlug,
+        eventId: selectedEventId,
         title: configForm.title,
         subtitle: configForm.subtitle,
         date: configForm.date,
@@ -820,8 +820,8 @@ export default function AdminDashboard() {
         </label>
         <select
           id="globalEventSelect"
-          value={selectedEventSlug}
-          onChange={(e) => setSelectedEventSlug(e.target.value)}
+          value={selectedEventId}
+          onChange={(e) => setSelectedEventId(e.target.value)}
           style={{
             padding: '10px 15px',
             borderRadius: '8px',
@@ -839,7 +839,7 @@ export default function AdminDashboard() {
           ))}
         </select>
         <a
-          href={`/${selectedEventSlug}`}
+          href={`/${selectedEventId}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -1476,7 +1476,12 @@ export default function AdminDashboard() {
                         Ver Página
                       </a>
                       <button
-                        onClick={() => setSelectedEventSlug(evt.slug)}
+                        onClick={() => {
+                          if (evt.id) {
+                            setSelectedEventId(evt.id)
+                            loadRSVPs(evt.id)
+                          }
+                        }}
                         style={{
                           padding: '8px 15px',
                           background: 'white',

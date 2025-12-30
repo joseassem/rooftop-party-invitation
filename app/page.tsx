@@ -1,17 +1,18 @@
 import { redirect } from 'next/navigation'
 import eventConfig from '../event-config.json'
-
-/**
- * Home page - redirects to the default event's slug
- * All events should be accessed via /{slug}
- */
+import { unstable_noStore as noStore } from 'next/cache'
 import { getAppSetting, getEventById } from '@/lib/queries'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
- * Home page - redirects to the default event's slug
+ * Home page - redirects to the default event's slug or the configured home event
  * All events should be accessed via /{slug}
  */
 export default async function Home() {
+  noStore()
+
   // 1. Intentar obtener el ID del evento de inicio desde la DB
   const homeEventId = await getAppSetting('home_event_id')
 
@@ -22,6 +23,13 @@ export default async function Home() {
     }
   }
 
-  // 2. Fallback al slug del config por defecto (usando id como slug historical legacy)
+  // 2. Fallback al slug del config por defecto
+  // Buscamos el evento legado por su ID conocido
+  const defaultEvent = await getEventById(eventConfig.event.id)
+  if (defaultEvent && defaultEvent.slug) {
+    redirect(`/${defaultEvent.slug}`)
+  }
+
+  // Fallback final ultra-seguro usando el ID como slug (comportamiento original)
   redirect(`/${eventConfig.event.id}`)
 }

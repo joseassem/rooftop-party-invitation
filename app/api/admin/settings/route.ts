@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppSetting, saveAppSetting } from '@/lib/queries'
 import { validateAdminAuth, getUnauthorizedResponse } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
+
 
 /**
  * GET /api/admin/settings
@@ -50,7 +52,13 @@ export async function POST(request: NextRequest) {
 
         await saveAppSetting(id, value)
 
+        // Limpiar caché de la home
+        if (id === 'home_event_id') {
+            revalidatePath('/')
+        }
+
         return NextResponse.json({
+
             success: true,
             message: 'Configuración guardada correctamente'
         })

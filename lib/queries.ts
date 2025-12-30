@@ -218,18 +218,24 @@ export async function createEvent(input: Omit<NewEvent, 'id' | 'createdAt' | 'up
     return event
 }
 
-/**
- * Get event by slug
- */
 export async function getEventBySlug(slug: string): Promise<Event | null> {
     if (!db) throw new Error('Database not configured')
 
+    // 1. Intentar por slug
     const [result] = await db.select()
         .from(events)
         .where(eq(events.slug, slug))
         .limit(1)
 
-    return result || null
+    if (result) return result
+
+    // 2. Intentar por ID (como fallback)
+    const [resultById] = await db.select()
+        .from(events)
+        .where(eq(events.id, slug))
+        .limit(1)
+
+    return resultById || null
 }
 
 /**
@@ -351,14 +357,23 @@ export async function saveEventSettings(
  * Get app setting by ID
  */
 export async function getAppSetting(id: string): Promise<string | null> {
-    if (!db) return null
+    if (!db) {
+        console.log(`⚠️ [getAppSetting] DB is not configured while fetching ${id}`)
+        return null
+    }
 
-    const [result] = await db.select()
-        .from(appSettings)
-        .where(eq(appSettings.id, id))
-        .limit(1)
+    try {
+        const [result] = await db.select()
+            .from(appSettings)
+            .where(eq(appSettings.id, id))
+            .limit(1)
 
-    return result ? result.value : null
+        console.log(`🔍 [getAppSetting] Fetched ${id}:`, result ? result.value : 'null')
+        return result ? result.value : null
+    } catch (error) {
+        console.error(`❌ [getAppSetting] Error fetching ${id}:`, error)
+        return null
+    }
 }
 
 /**
