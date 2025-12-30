@@ -239,6 +239,36 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
 }
 
 /**
+ * Get event by slug with merged settings (for metadata)
+ */
+export async function getEventBySlugWithSettings(slug: string): Promise<{
+    id: string
+    slug: string
+    title: string
+    subtitle: string
+    date: string
+    time: string
+    location: string
+    backgroundImageUrl: string | null
+} | null> {
+    const event = await getEventBySlug(slug)
+    if (!event) return null
+
+    const settings = await getEventSettings(event.id)
+
+    return {
+        id: event.id,
+        slug: event.slug,
+        title: settings?.title ?? event.title,
+        subtitle: settings?.subtitle ?? event.subtitle ?? '',
+        date: settings?.date ?? event.date ?? '',
+        time: settings?.time ?? event.time ?? '',
+        location: settings?.location ?? event.location ?? '',
+        backgroundImageUrl: settings?.backgroundImageUrl ?? event.backgroundImageUrl,
+    }
+}
+
+/**
  * Get event by ID
  */
 export async function getEventById(eventId: string): Promise<Event | null> {
@@ -320,6 +350,40 @@ export async function getEventSettings(eventId: string): Promise<EventSettings |
         .limit(1)
 
     return result || null
+}
+
+/**
+ * Get event with merged settings (settings override base event data)
+ * This is used for metadata generation to show configured values
+ */
+export async function getEventWithSettings(eventId: string): Promise<{
+    id: string
+    slug: string
+    title: string
+    subtitle: string
+    date: string
+    time: string
+    location: string
+    backgroundImageUrl: string | null
+} | null> {
+    if (!db) throw new Error('Database not configured')
+
+    const event = await getEventById(eventId)
+    if (!event) return null
+
+    const settings = await getEventSettings(eventId)
+
+    // Settings override base event data
+    return {
+        id: event.id,
+        slug: event.slug,
+        title: settings?.title ?? event.title,
+        subtitle: settings?.subtitle ?? event.subtitle ?? '',
+        date: settings?.date ?? event.date ?? '',
+        time: settings?.time ?? event.time ?? '',
+        location: settings?.location ?? event.location ?? '',
+        backgroundImageUrl: settings?.backgroundImageUrl ?? event.backgroundImageUrl,
+    }
 }
 
 /**

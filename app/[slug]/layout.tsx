@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { getEventBySlug } from '@/lib/queries'
+import { getEventBySlugWithSettings } from '@/lib/queries'
 import eventConfig from '@/event-config.json'
 
 interface LayoutProps {
@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     const baseUrl = 'https://party.timekast.mx'
 
     try {
-        const event = await getEventBySlug(slug)
+        const event = await getEventBySlugWithSettings(slug)
 
         if (!event) {
             return {
