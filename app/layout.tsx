@@ -3,6 +3,7 @@ import './globals.css'
 import eventConfig from '../event-config.json'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://party.timekast.mx'),
   title: `${eventConfig.event.title} - ${eventConfig.event.subtitle}`,
   description: `Invitación a ${eventConfig.event.title} - ${eventConfig.event.date} ${eventConfig.event.time}`,
   icons: {
