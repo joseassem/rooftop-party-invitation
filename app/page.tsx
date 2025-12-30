@@ -24,10 +24,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = `${event.title} - ${event.subtitle}`
   const description = `${event.date} ${event.time} - ${event.location}`
 
-  // Usar imagen optimizada og-event.png si la imagen es pesada o local
-  let imageUrl = event.backgroundImageUrl || `${baseUrl}/og-event.png`
-  if (imageUrl.includes('background.png') || !imageUrl.startsWith('http')) {
+  // Evitar fondo pesado (18MB) que bloquea WhatsApp
+  let imageUrl = event.backgroundImageUrl || '/og-event.png'
+
+  if (imageUrl.includes('background.png')) {
     imageUrl = `${baseUrl}/og-event.png`
+  } else if (imageUrl.startsWith('/')) {
+    imageUrl = `${baseUrl}${imageUrl}`
   }
 
   return {
@@ -37,12 +40,13 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      url: baseUrl,
+      url: `${baseUrl}/${event.slug}`,
       siteName: eventConfig.event.title,
       type: 'website',
       images: [
         {
           url: imageUrl,
+          secureUrl: imageUrl,
           width: 1200,
           height: 630,
           alt: event.title,
