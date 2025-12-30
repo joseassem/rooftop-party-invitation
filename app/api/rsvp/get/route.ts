@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
         email: rsvp.email,
         phone: rsvp.phone,
         plusOne: rsvp.plusOne,
-        status: rsvp.status
+        status: rsvp.status,
+        eventId: rsvp.eventId
       }
     })
 

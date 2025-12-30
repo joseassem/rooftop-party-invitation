@@ -14,7 +14,17 @@ interface RSVPData {
   phone: string
   plusOne: boolean
   status: string
+  eventId: string
 }
+
+interface EventTheme {
+  primaryColor: string
+  secondaryColor: string
+  accentColor: string
+  title: string
+  subtitle: string
+}
+
 
 export default function CancelPage() {
   const params = useParams()
@@ -28,12 +38,14 @@ export default function CancelPage() {
   const [updated, setUpdated] = useState(false)
   const [error, setError] = useState('')
   const [rsvpData, setRsvpData] = useState<RSVPData | null>(null)
-  
+  const [eventTheme, setEventTheme] = useState<EventTheme | null>(null)
+
   // Campos editables
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [plusOne, setPlusOne] = useState(false)
+
 
   // Cargar datos del RSVP
   useEffect(() => {
@@ -54,6 +66,23 @@ export default function CancelPage() {
           setEmail(data.rsvp.email)
           setPhone(data.rsvp.phone)
           setPlusOne(data.rsvp.plusOne)
+
+          // Cargar configuración de la fiesta
+          try {
+            const eventRes = await fetch(`/api/events/${data.rsvp.eventId}`)
+            const eventData = await eventRes.json()
+            if (eventData.success && eventData.event) {
+              setEventTheme({
+                primaryColor: eventData.event.theme.primaryColor,
+                secondaryColor: eventData.event.theme.secondaryColor,
+                accentColor: eventData.event.theme.accentColor,
+                title: eventData.event.title,
+                subtitle: eventData.event.subtitle
+              })
+            }
+          } catch (e) {
+            console.error('Error loading event theme:', e)
+          }
         } else {
           setError(data.error || 'No se pudo cargar la información')
         }
@@ -69,7 +98,7 @@ export default function CancelPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!rsvpId || !token) {
       setError('Link inválido')
       return
@@ -102,7 +131,7 @@ export default function CancelPage() {
         const wasReconfirmed = rsvpData?.status === 'cancelled'
         setUpdated(true)
         setRsvpData(data.rsvp)
-        
+
         // Mostrar mensaje apropiado
         if (wasReconfirmed) {
           setError('') // Limpiar errores
@@ -199,14 +228,34 @@ export default function CancelPage() {
     )
   }
 
+  const displayTitle = eventTheme?.title || eventConfig.event.title
+  const displaySubtitle = eventTheme?.subtitle || eventConfig.event.subtitle
+  const theme = eventTheme || {
+    primaryColor: '#FF1493',
+    secondaryColor: '#00FFFF',
+    accentColor: '#FFD700'
+  }
+
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
-        <h1>Modificar o Cancelar Asistencia</h1>
-        
-        <div className={styles.eventInfo}>
-          <h2>{eventConfig.event.title}</h2>
-          <p>{eventConfig.event.subtitle}</p>
+      <div
+        className={styles.card}
+        style={{
+          borderColor: `${theme.primaryColor}80`,
+          boxShadow: `0 0 30px ${theme.primaryColor}33`
+        }}
+      >
+        <h1 style={{ color: theme.primaryColor }}>Modificar o Cancelar Asistencia</h1>
+
+        <div
+          className={styles.eventInfo}
+          style={{
+            background: `${theme.primaryColor}15`,
+            border: `1px solid ${theme.primaryColor}33`
+          }}
+        >
+          <h2 style={{ color: theme.primaryColor }}>{displayTitle}</h2>
+          <p>{displaySubtitle}</p>
           <p>{eventConfig.event.date} - {eventConfig.event.time}</p>
           <p>{eventConfig.event.location}</p>
         </div>
@@ -224,8 +273,8 @@ export default function CancelPage() {
         )}
 
         {updated && (
-          <div className={styles.success}>
-            {rsvpData?.status === 'confirmed' 
+          <div className={styles.success} style={{ borderColor: theme.secondaryColor }}>
+            {rsvpData?.status === 'confirmed'
               ? '✅ ¡Asistencia reconfirmada! Nos vemos en el evento 🎉'
               : '✅ Información actualizada correctamente'}
           </div>
@@ -241,6 +290,9 @@ export default function CancelPage() {
               onChange={(e) => setName(e.target.value)}
               required
               disabled={saving}
+              style={{ borderColor: `${theme.primaryColor}4d` }}
+              onFocus={(e) => (e.target.style.borderColor = theme.primaryColor)}
+              onBlur={(e) => (e.target.style.borderColor = `${theme.primaryColor}4d`)}
             />
           </div>
 
@@ -253,6 +305,9 @@ export default function CancelPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={saving}
+              style={{ borderColor: `${theme.primaryColor}4d` }}
+              onFocus={(e) => (e.target.style.borderColor = theme.primaryColor)}
+              onBlur={(e) => (e.target.style.borderColor = `${theme.primaryColor}4d`)}
             />
           </div>
 
@@ -280,6 +335,7 @@ export default function CancelPage() {
                 checked={plusOne}
                 onChange={(e) => setPlusOne(e.target.checked)}
                 disabled={saving}
+                style={{ accentColor: theme.primaryColor } as any}
               />
               <span>Asistiré con acompañante (+1)</span>
             </label>
@@ -289,9 +345,13 @@ export default function CancelPage() {
             type="submit"
             disabled={saving}
             className={styles.updateBtn}
+            style={{
+              background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+              boxShadow: `0 4px 15px ${theme.primaryColor}4d`
+            }}
           >
-            {saving 
-              ? 'Guardando...' 
+            {saving
+              ? 'Guardando...'
               : rsvpData?.status === 'cancelled'
                 ? '✅ Reconfirmar Asistencia'
                 : '💾 Actualizar Información'}
@@ -312,7 +372,11 @@ export default function CancelPage() {
           </>
         )}
 
-        <a href="/" className={styles.backLink}>
+        <a
+          href="/"
+          className={styles.backLink}
+          style={{ color: theme.secondaryColor }}
+        >
           Volver al inicio
         </a>
       </div>

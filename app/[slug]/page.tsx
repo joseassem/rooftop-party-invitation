@@ -287,6 +287,7 @@ export default function EventPage() {
                         isOpen={isModalOpen}
                         onClose={() => setIsModalOpen(false)}
                         eventSlug={slug}
+                        theme={theme}
                     />
                 )}
             </AnimatePresence>

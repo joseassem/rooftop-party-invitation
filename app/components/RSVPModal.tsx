@@ -9,10 +9,22 @@ import styles from './RSVPModal.module.css'
 interface RSVPModalProps {
   isOpen: boolean
   onClose: () => void
-  eventSlug?: string  // Optional for backward compatibility
+  eventSlug?: string
+  theme?: {
+    primaryColor: string
+    secondaryColor: string
+    accentColor: string
+  }
 }
 
-export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps) {
+export default function RSVPModal({ isOpen, onClose, eventSlug, theme }: RSVPModalProps) {
+  // Configuración por defecto si no se provee el tema
+  const activeTheme = theme || {
+    primaryColor: '#FF1493',
+    secondaryColor: '#00FFFF',
+    accentColor: '#FFD700'
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -83,14 +95,35 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.8, y: 50 }}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          borderColor: `${activeTheme.primaryColor}80`,
+          boxShadow: `0 0 40px ${activeTheme.primaryColor}66, 0 0 80px ${activeTheme.secondaryColor}33`,
+        }}
       >
-        <button className={styles.closeButton} onClick={onClose}>
+        <button
+          className={styles.closeButton}
+          onClick={onClose}
+          style={{ borderColor: `${activeTheme.primaryColor}80` }}
+        >
           ✕
         </button>
 
         <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>¡Confirma tu Asistencia!</h2>
-          <p className={styles.modalSubtitle}>Necesitamos tus datos para el RSVP</p>
+          <h2
+            className={styles.modalTitle}
+            style={{
+              color: activeTheme.primaryColor,
+              textShadow: `0 0 10px ${activeTheme.primaryColor}99, 0 0 20px ${activeTheme.primaryColor}66`
+            }}
+          >
+            ¡Confirma tu Asistencia!
+          </h2>
+          <p
+            className={styles.modalSubtitle}
+            style={{ color: activeTheme.secondaryColor }}
+          >
+            Necesitamos tus datos para el RSVP
+          </p>
         </div>
 
         {submitStatus === 'success' ? (
@@ -99,9 +132,16 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
+            style={{
+              background: `${activeTheme.secondaryColor}10`,
+              borderRadius: '20px',
+              border: `1px solid ${activeTheme.secondaryColor}33`,
+              padding: '40px 20px',
+              marginTop: '10px'
+            }}
           >
             <div className={styles.successIcon}>🎉</div>
-            <h3>¡Confirmado!</h3>
+            <h3 style={{ color: activeTheme.secondaryColor }}>¡Confirmado!</h3>
             <p>Nos vemos en la fiesta</p>
           </motion.div>
         ) : (
@@ -120,6 +160,9 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
                 className={styles.input}
                 placeholder="Tu nombre"
                 disabled={isSubmitting}
+                style={{ borderColor: `${activeTheme.primaryColor}4d` }}
+                onFocus={(e) => (e.target.style.borderColor = activeTheme.primaryColor)}
+                onBlur={(e) => (e.target.style.borderColor = `${activeTheme.primaryColor}4d`)}
               />
             </div>
 
@@ -137,6 +180,9 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
                 className={styles.input}
                 placeholder="tu@email.com"
                 disabled={isSubmitting}
+                style={{ borderColor: `${activeTheme.primaryColor}4d` }}
+                onFocus={(e) => (e.target.style.borderColor = activeTheme.primaryColor)}
+                onBlur={(e) => (e.target.style.borderColor = `${activeTheme.primaryColor}4d`)}
               />
             </div>
 
@@ -160,7 +206,7 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.checkboxLabel}>
+              <label className={styles.checkboxLabel} style={{ borderColor: `${activeTheme.primaryColor}4d` }}>
                 <input
                   type="checkbox"
                   name="plusOne"
@@ -168,10 +214,12 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
                   onChange={handleChange}
                   className={styles.checkbox}
                   disabled={isSubmitting}
+                  style={{ accentColor: activeTheme.primaryColor } as any}
                 />
                 <span className={styles.checkboxText}>¿Vienes con +1?</span>
               </label>
             </div>
+
 
             {submitStatus === 'error' && (
               <div className={styles.errorMessage}>
@@ -185,6 +233,10 @@ export default function RSVPModal({ isOpen, onClose, eventSlug }: RSVPModalProps
               disabled={isSubmitting}
               whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
               whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+              style={{
+                background: `linear-gradient(135deg, ${activeTheme.primaryColor}, ${activeTheme.secondaryColor})`,
+                boxShadow: `0 0 20px ${activeTheme.primaryColor}80, 0 0 40px ${activeTheme.secondaryColor}4d`
+              }}
             >
               {isSubmitting ? (
                 <span className={styles.spinner}>Enviando...</span>
