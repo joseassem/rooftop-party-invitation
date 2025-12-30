@@ -98,6 +98,7 @@ export default function RSVPModal({ isOpen, onClose, eventSlug, theme }: RSVPMod
         style={{
           borderColor: `${activeTheme.primaryColor}80`,
           boxShadow: `0 0 40px ${activeTheme.primaryColor}66, 0 0 80px ${activeTheme.secondaryColor}33`,
+          background: `linear-gradient(135deg, rgba(26, 0, 51, 0.98), ${activeTheme.primaryColor}15)`
         }}
       >
         <button

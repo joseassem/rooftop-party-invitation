@@ -242,10 +242,14 @@ export default function CancelPage() {
         className={styles.card}
         style={{
           borderColor: `${theme.primaryColor}80`,
-          boxShadow: `0 0 30px ${theme.primaryColor}33`
+          boxShadow: `0 0 30px ${theme.primaryColor}33`,
+          background: `linear-gradient(135deg, rgba(26, 0, 51, 0.95), ${theme.primaryColor}15)`,
+          color: '#ffffff'
         }}
       >
-        <h1 style={{ color: theme.primaryColor }}>Modificar o Cancelar Asistencia</h1>
+        <h1 style={{ color: theme.primaryColor, textShadow: `0 0 10px ${theme.primaryColor}4d` }}>
+          Modificar o Cancelar Asistencia
+        </h1>
 
         <div
           className={styles.eventInfo}
@@ -255,9 +259,9 @@ export default function CancelPage() {
           }}
         >
           <h2 style={{ color: theme.primaryColor }}>{displayTitle}</h2>
-          <p>{displaySubtitle}</p>
-          <p>{eventConfig.event.date} - {eventConfig.event.time}</p>
-          <p>{eventConfig.event.location}</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{displaySubtitle}</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{eventConfig.event.date} - {eventConfig.event.time}</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{eventConfig.event.location}</p>
         </div>
 
         {rsvpData?.status === 'cancelled' && !updated && (
@@ -282,7 +286,7 @@ export default function CancelPage() {
 
         <form onSubmit={handleUpdate} className={styles.form}>
           <div className={styles.formGroup}>
-            <label htmlFor="name">Nombre completo</label>
+            <label htmlFor="name" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Nombre completo</label>
             <input
               type="text"
               id="name"
@@ -297,7 +301,7 @@ export default function CancelPage() {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Email</label>
             <input
               type="email"
               id="email"
@@ -312,7 +316,7 @@ export default function CancelPage() {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="phone">Teléfono</label>
+            <label htmlFor="phone" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Teléfono</label>
             <PhoneInput
               defaultCountry="mx"
               value={phone}
@@ -329,7 +333,7 @@ export default function CancelPage() {
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.checkboxLabel}>
+            <label className={styles.checkboxLabel} style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
               <input
                 type="checkbox"
                 checked={plusOne}
