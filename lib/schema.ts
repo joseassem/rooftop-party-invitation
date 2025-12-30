@@ -2,7 +2,7 @@ import { pgTable, text, boolean, timestamp, integer, jsonb, varchar } from 'driz
 
 // Events table for multi-party support
 export const events = pgTable('events', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id').primaryKey().notNull().$defaultFn(() => crypto.randomUUID()),
     slug: varchar('slug', { length: 100 }).notNull().unique(),
     title: text('title').notNull(),
     subtitle: text('subtitle').default(''),
@@ -108,6 +108,14 @@ export const eventSettings = pgTable('event_settings', {
 
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+// Application settings for global configuration
+export const appSettings = pgTable('app_settings', {
+    id: text('id').primaryKey(), // 'home_event_id', etc.
+    value: text('value').notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
 
 // Type exports for use in application
 export type Event = typeof events.$inferSelect

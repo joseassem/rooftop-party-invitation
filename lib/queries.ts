@@ -3,7 +3,7 @@
  * Replaces Firestore functions with Drizzle ORM + Neon
  */
 
-import { db, isDatabaseConfigured, rsvps, events, eventSettings } from './db'
+import { db, isDatabaseConfigured, rsvps, events, eventSettings, appSettings } from './db'
 import { eq, desc, and } from 'drizzle-orm'
 import type { Event, NewEvent, RSVP, NewRSVP, EventSettings } from './schema'
 import crypto from 'crypto'
@@ -342,3 +342,40 @@ export async function saveEventSettings(
         return created
     }
 }
+
+// ============================================
+// App Settings Functions
+// ============================================
+
+/**
+ * Get app setting by ID
+ */
+export async function getAppSetting(id: string): Promise<string | null> {
+    if (!db) return null
+
+    const [result] = await db.select()
+        .from(appSettings)
+        .where(eq(appSettings.id, id))
+        .limit(1)
+
+    return result ? result.value : null
+}
+
+/**
+ * Save app setting
+ */
+export async function saveAppSetting(id: string, value: string): Promise<void> {
+    if (!db) throw new Error('Database not configured')
+
+    const existing = await getAppSetting(id)
+
+    if (existing !== null) {
+        await db.update(appSettings)
+            .set({ value, updatedAt: new Date() })
+            .where(eq(appSettings.id, id))
+    } else {
+        await db.insert(appSettings)
+            .values({ id, value })
+    }
+}
+

@@ -38,6 +38,8 @@ export default function AdminDashboard() {
   // Estado para multi-party
   const [events, setEvents] = useState<Event[]>([])
   const [selectedEventSlug, setSelectedEventSlug] = useState<string>(eventConfig.event.id)
+  const [homeEventId, setHomeEventId] = useState<string>('')
+
 
   // Estado para configuración del evento
   const [configForm, setConfigForm] = useState({
@@ -196,12 +198,62 @@ export default function AdminDashboard() {
     }
   }
 
+  // Cargar settings de la app
+  const loadAppSettings = async () => {
+    try {
+      const authHeader = sessionStorage.getItem('admin_auth')
+      const response = await fetch('/api/admin/settings', {
+        headers: { 'Authorization': `Basic ${authHeader}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.settings) {
+          setHomeEventId(data.settings.home_event_id || '')
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando settings:', error)
+    }
+  }
+
+  // Marcar como evento de inicio
+  const setAsHome = async (eventId: string) => {
+    try {
+      setLoading(true)
+      const authHeader = sessionStorage.getItem('admin_auth')
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authHeader}`
+        },
+        body: JSON.stringify({ id: 'home_event_id', value: eventId })
+      })
+
+      if (response.ok) {
+        setHomeEventId(eventId)
+        setMessage(`✅ Evento establecido como página de inicio`)
+        setTimeout(() => setMessage(''), 3000)
+      } else {
+        setMessage('❌ Error al guardar configuración')
+      }
+    } catch (error) {
+      console.error('Error guardando home event:', error)
+      setMessage('❌ Error de conexión')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
   // Cargar eventos al montar
   useEffect(() => {
     if (isAuthenticated) {
       loadEvents()
+      loadAppSettings()
     }
   }, [isAuthenticated])
+
 
   // Cargar configuración del evento seleccionado
   const loadEventConfig = async (eventId: string) => {
@@ -1437,12 +1489,31 @@ export default function AdminDashboard() {
                       >
                         Ver RSVPs
                       </button>
+                      <button
+                        onClick={() => evt.id && setAsHome(evt.id)}
+                        disabled={homeEventId === evt.id}
+                        style={{
+                          padding: '8px 15px',
+                          background: homeEventId === evt.id ? '#10b981' : 'rgba(255,255,255,0.2)',
+                          color: homeEventId === evt.id ? 'white' : 'inherit',
+                          borderRadius: '6px',
+                          border: homeEventId === evt.id ? 'none' : '1px solid currentColor',
+                          cursor: homeEventId === evt.id ? 'default' : 'pointer',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        {homeEventId === evt.id ? '🏠 Home Page' : 'Set as Home'}
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
 
           {/* Formulario para crear nuevo evento */}
           <div style={{ borderTop: '2px solid #eee', paddingTop: '30px' }}>
