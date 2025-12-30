@@ -154,7 +154,7 @@ function verifyAuth(authHeader: string): boolean {
         const base64Credentials = authHeader.replace('Basic ', '')
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
         const [username, password] = credentials.split(':')
-        return username === 'admin' && password === 'rooftop2024!'
+        return username === 'admin' && password === 'partytime'
     } catch {
         return false
     }

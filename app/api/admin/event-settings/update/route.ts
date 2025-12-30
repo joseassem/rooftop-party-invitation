@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { saveEventSettings } from '@/lib/firestore'
-import type { EventSettings } from '@/types/event-settings'
+import { isDatabaseConfigured } from '@/lib/db'
 
 /**
  * POST /api/admin/event-settings/update
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Preparar settings con valores por defecto
+    // Preparar settings
     const settings = {
       eventId: body.eventId,
       title: body.title,
@@ -36,18 +35,46 @@ export async function POST(request: NextRequest) {
       time: body.time || '',
       location: body.location || '',
       details: body.details || '',
-      price: body.price || { enabled: false, amount: 0, currency: 'MXN' },
-      capacity: body.capacity || { enabled: false, limit: 0 },
-      backgroundImage: body.backgroundImage || { url: '', uploadedAt: null }
+      priceEnabled: body.price?.enabled || false,
+      priceAmount: body.price?.amount || 0,
+      priceCurrency: body.price?.currency || 'MXN',
+      capacityEnabled: body.capacity?.enabled || false,
+      capacityLimit: body.capacity?.limit || 0,
+      backgroundImageUrl: body.backgroundImage?.url || '/background.png',
+      // Theme colors
+      primaryColor: body.theme?.primaryColor || '#FF1493',
+      secondaryColor: body.theme?.secondaryColor || '#00FFFF',
+      accentColor: body.theme?.accentColor || '#FFD700'
     }
 
-    // Guardar en Firestore
-    await saveEventSettings(settings)
+    console.log('📝 Preparando settings:', settings)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Configuración actualizada correctamente'
-    })
+    if (isDatabaseConfigured()) {
+      console.log('✅ Base de datos configurada, guardando...')
+      const { saveEventSettings } = await import('@/lib/queries')
+      try {
+        const result = await saveEventSettings(settings)
+        console.log('✅ Guardado exitoso:', result)
+
+        return NextResponse.json({
+          success: true,
+          message: 'Configuración actualizada correctamente'
+        })
+      } catch (dbError) {
+        console.error('❌ Error de base de datos:', dbError)
+        return NextResponse.json({
+          success: false,
+          message: 'Error al guardar en base de datos'
+        }, { status: 500 })
+      }
+    } else {
+      console.log('⚠️ Modo demo - configuración no guardada permanentemente')
+      return NextResponse.json({
+        success: true,
+        message: 'Configuración actualizada (modo demo)',
+        note: 'Configura DATABASE_URL para guardar permanentemente'
+      })
+    }
 
   } catch (error) {
     console.error('Error al actualizar configuración:', error)
@@ -68,7 +95,7 @@ function verifyAuth(authHeader: string): boolean {
     const [username, password] = credentials.split(':')
 
     // Estas credenciales deben coincidir con las del admin
-    return username === 'admin' && password === 'rooftop2024!'
+    return username === 'admin' && password === 'partytime'
   } catch {
     return false
   }

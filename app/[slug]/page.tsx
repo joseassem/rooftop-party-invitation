@@ -125,10 +125,15 @@ export default function EventPage() {
                 <div
                     className={styles.background}
                     style={{
-                        backgroundImage: `url(${event.backgroundImage.url})`,
+                        backgroundImage: `url(${event.backgroundImage?.url || '/background.png'})`,
                     }}
                 />
-                <div className={styles.overlay} />
+                <div
+                    className={styles.overlay}
+                    style={{
+                        background: `linear-gradient(180deg, ${theme.primaryColor}10 0%, ${theme.primaryColor}30 100%)`
+                    }}
+                />
             </div>
 
             {/* Main content */}
@@ -142,7 +147,14 @@ export default function EventPage() {
                     {/* Main title with neon effect */}
                     <h1 className={styles.title}>
                         {event.title.split(' ').map((word, index) => (
-                            <span key={index} className={index === 0 ? styles.titleLine1 : styles.titleLine2}>
+                            <span
+                                key={index}
+                                className={index === 0 ? styles.titleLine1 : styles.titleLine2}
+                                style={{
+                                    color: theme.primaryColor,
+                                    textShadow: `0 0 10px ${theme.primaryColor}cc, 0 0 20px ${theme.primaryColor}99, 0 0 30px ${theme.primaryColor}66, 3px 3px 0 ${theme.secondaryColor}4d`
+                                }}
+                            >
                                 {word}
                             </span>
                         ))}
@@ -154,7 +166,10 @@ export default function EventPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6, delay: 0.6 }}
                         className={styles.subtitle}
-                        style={{ color: theme.secondaryColor }}
+                        style={{
+                            color: theme.secondaryColor,
+                            textShadow: `0 0 10px ${theme.secondaryColor}cc, 0 0 20px ${theme.secondaryColor}80, 2px 2px 0 ${theme.accentColor}4d`
+                        }}
                     >
                         {event.subtitle}
                     </motion.h2>
@@ -166,6 +181,11 @@ export default function EventPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.8 }}
                     className={styles.eventInfo}
+                    style={{
+                        background: `${theme.primaryColor}20`,
+                        border: `2px solid ${theme.primaryColor}4d`,
+                        boxShadow: `0 0 30px ${theme.primaryColor}4d, 0 0 60px ${theme.secondaryColor}33`
+                    }}
                 >
                     <div className={styles.infoItem}>
                         <span className={styles.icon}>📅</span>
@@ -193,7 +213,7 @@ export default function EventPage() {
                         </span>
                     </div>
 
-                    {event.price.enabled && (
+                    {event.price?.enabled && (
                         <div className={styles.infoItem}>
                             <span className={styles.infoText} style={{ color: theme.accentColor, fontWeight: 'bold' }}>
                                 💵 Cuota de recuperación: ${event.price.amount} {event.price.currency}
@@ -201,7 +221,7 @@ export default function EventPage() {
                         </div>
                     )}
 
-                    {event.capacity.enabled && (
+                    {event.capacity?.enabled && (
                         <div className={styles.infoItem}>
                             <span className={styles.infoText} style={{ color: theme.secondaryColor }}>
                                 ⚠️ Cupo limitado: {event.capacity.limit} personas

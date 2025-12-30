@@ -101,6 +101,11 @@ export const eventSettings = pgTable('event_settings', {
 
     backgroundImageUrl: text('background_image_url').default('/background.png'),
 
+    // Theme colors
+    primaryColor: varchar('primary_color', { length: 10 }).default('#FF1493'),
+    secondaryColor: varchar('secondary_color', { length: 10 }).default('#00FFFF'),
+    accentColor: varchar('accent_color', { length: 10 }).default('#FFD700'),
+
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 

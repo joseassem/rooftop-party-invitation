@@ -51,7 +51,11 @@ export default function AdminDashboard() {
     priceAmount: 250,
     capacityEnabled: true,
     capacityLimit: 100,
-    backgroundImage: eventConfig.event.backgroundImage
+    backgroundImage: eventConfig.event.backgroundImage,
+    // Theme colors
+    primaryColor: '#FF1493',
+    secondaryColor: '#00FFFF',
+    accentColor: '#FFD700'
   })
 
   // Filtros para MOSTRAR en tabla
@@ -77,14 +81,45 @@ export default function AdminDashboard() {
   // Autenticación
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+    setMessage('')
 
-    // Guardar credenciales en sessionStorage
-    const credentials = btoa(`${username}:${password}`)
-    sessionStorage.setItem('admin_auth', credentials)
+    try {
+      // Crear credenciales Base64
+      const credentials = btoa(`${username}:${password}`)
 
-    // Marcar como autenticado y cargar RSVPs
-    setIsAuthenticated(true)
-    await loadRSVPs()
+      // Validar credenciales con el servidor
+      const response = await fetch('/api/admin/validate', {
+        headers: {
+          'Authorization': `Basic ${credentials}`
+        }
+      })
+
+      if (response.status === 401) {
+        setMessage('❌ Credenciales incorrectas')
+        setLoading(false)
+        return
+      }
+
+      if (!response.ok) {
+        setMessage('❌ Error de conexión')
+        setLoading(false)
+        return
+      }
+
+      // Credenciales válidas - guardar y marcar como autenticado
+      sessionStorage.setItem('admin_auth', credentials)
+      setIsAuthenticated(true)
+      setMessage('')
+
+      // Cargar datos
+      await loadRSVPs()
+    } catch (error) {
+      console.error('Error en login:', error)
+      setMessage('❌ Error de conexión')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const loadRSVPs = async (eventId?: string) => {
@@ -167,6 +202,46 @@ export default function AdminDashboard() {
       loadEvents()
     }
   }, [isAuthenticated])
+
+  // Cargar configuración del evento seleccionado
+  const loadEventConfig = async (eventId: string) => {
+    try {
+      console.log('⚙️ Cargando configuración para evento:', eventId)
+      const response = await fetch(`/api/event-settings?eventId=${encodeURIComponent(eventId)}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.settings) {
+          console.log('✅ Configuración cargada:', data.settings.title)
+          setConfigForm({
+            title: data.settings.title || '',
+            subtitle: data.settings.subtitle || '',
+            date: data.settings.date || '',
+            time: data.settings.time || '',
+            location: data.settings.location || '',
+            details: data.settings.details || '',
+            priceEnabled: data.settings.price?.enabled || false,
+            priceAmount: data.settings.price?.amount || 0,
+            capacityEnabled: data.settings.capacity?.enabled || false,
+            capacityLimit: data.settings.capacity?.limit || 0,
+            backgroundImage: data.settings.backgroundImage?.url || '/background.png',
+            // Theme colors
+            primaryColor: data.settings.theme?.primaryColor || '#FF1493',
+            secondaryColor: data.settings.theme?.secondaryColor || '#00FFFF',
+            accentColor: data.settings.theme?.accentColor || '#FFD700'
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando configuración del evento:', error)
+    }
+  }
+
+  // Cargar configuración cuando cambia el evento seleccionado
+  useEffect(() => {
+    if (isAuthenticated && selectedEventSlug) {
+      loadEventConfig(selectedEventSlug)
+    }
+  }, [selectedEventSlug, isAuthenticated])
 
   // Recargar RSVPs cuando cambia el evento seleccionado
   useEffect(() => {
@@ -464,11 +539,45 @@ export default function AdminDashboard() {
 
     try {
       const authHeader = sessionStorage.getItem('admin_auth')
+      console.log('💾 Guardando configuración...')
+      console.log('🔑 Auth header existe:', !!authHeader)
+      console.log('🔑 Auth header valor:', authHeader ? authHeader.substring(0, 10) + '...' : 'NULL')
+
       if (!authHeader) {
-        setMessage('❌ No autenticado')
+        setMessage('❌ No autenticado - por favor inicia sesión de nuevo')
         setLoading(false)
         return
       }
+
+      const requestBody = {
+        eventId: selectedEventSlug,
+        title: configForm.title,
+        subtitle: configForm.subtitle,
+        date: configForm.date,
+        time: configForm.time,
+        location: configForm.location,
+        details: configForm.details,
+        price: {
+          enabled: configForm.priceEnabled,
+          amount: configForm.priceAmount,
+          currency: 'MXN'
+        },
+        capacity: {
+          enabled: configForm.capacityEnabled,
+          limit: configForm.capacityLimit
+        },
+        backgroundImage: {
+          url: configForm.backgroundImage,
+          uploadedAt: null
+        },
+        theme: {
+          primaryColor: configForm.primaryColor,
+          secondaryColor: configForm.secondaryColor,
+          accentColor: configForm.accentColor
+        }
+      }
+
+      console.log('📦 Request body:', requestBody)
 
       const response = await fetch('/api/admin/event-settings/update', {
         method: 'POST',
@@ -476,31 +585,12 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${authHeader}`
         },
-        body: JSON.stringify({
-          eventId: eventConfig.event.id,
-          title: configForm.title,
-          subtitle: configForm.subtitle,
-          date: configForm.date,
-          time: configForm.time,
-          location: configForm.location,
-          details: configForm.details,
-          price: {
-            enabled: configForm.priceEnabled,
-            amount: configForm.priceAmount,
-            currency: 'MXN'
-          },
-          capacity: {
-            enabled: configForm.capacityEnabled,
-            limit: configForm.capacityLimit
-          },
-          backgroundImage: {
-            url: configForm.backgroundImage,
-            uploadedAt: null
-          }
-        })
+        body: JSON.stringify(requestBody)
       })
 
+      console.log('📨 Response status:', response.status)
       const data = await response.json()
+      console.log('📨 Response data:', data)
 
       if (data.success) {
         setMessage('✅ Configuración guardada correctamente')
@@ -508,6 +598,7 @@ export default function AdminDashboard() {
         setMessage(`❌ Error: ${data.message}`)
       }
     } catch (error) {
+      console.error('❌ Error al guardar:', error)
       setMessage('❌ Error al guardar configuración')
     } finally {
       setLoading(false)
@@ -625,12 +716,16 @@ export default function AdminDashboard() {
           <h1>🔐 Admin Dashboard</h1>
           <p>{eventConfig.event.title}</p>
 
-          <form onSubmit={handleLogin} className={styles.loginForm}>
+          <form onSubmit={handleLogin} className={styles.loginForm} autoComplete="off">
             <input
               type="text"
               placeholder="Usuario"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               required
             />
             <input
@@ -638,6 +733,7 @@ export default function AdminDashboard() {
               placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
             <button type="submit" disabled={loading}>
@@ -659,20 +755,69 @@ export default function AdminDashboard() {
           <span className={styles.headerSubtitle}>{eventConfig.event.title}</span>
         </div>
         <div className={styles.headerActions}>
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.viewSiteBtn}
-            title="Ver página de RSVP"
-          >
-            🌐 Ver Sitio
-          </a>
           <button onClick={handleLogout} className={styles.logoutBtn}>
             Cerrar Sesión
           </button>
         </div>
       </header>
+
+      {/* Event Selector - Always visible */}
+      <div style={{ padding: '15px 20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '0', display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+        <label htmlFor="globalEventSelect" style={{ fontWeight: 'bold', color: 'white', fontSize: '16px' }}>
+          🎪 Evento Activo:
+        </label>
+        <select
+          id="globalEventSelect"
+          value={selectedEventSlug}
+          onChange={(e) => setSelectedEventSlug(e.target.value)}
+          style={{
+            padding: '10px 15px',
+            borderRadius: '8px',
+            border: 'none',
+            fontSize: '14px',
+            minWidth: '280px',
+            fontWeight: '500'
+          }}
+        >
+          <option value={eventConfig.event.id}>{eventConfig.event.title} - {eventConfig.event.subtitle}</option>
+          {events.map((evt) => (
+            <option key={evt.id} value={evt.slug}>
+              {evt.title} {evt.subtitle && `- ${evt.subtitle}`} {!evt.isActive && '(Inactivo)'}
+            </option>
+          ))}
+        </select>
+        <a
+          href={`/${selectedEventSlug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: '10px 15px',
+            background: 'white',
+            color: '#667eea',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: '600'
+          }}
+        >
+          🔗 Ver Página
+        </a>
+        <button
+          onClick={() => setActiveTab('eventos')}
+          style={{
+            padding: '10px 15px',
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: '2px solid white',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '600'
+          }}
+        >
+          + Nueva Fiesta
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className={styles.tabs}>
@@ -699,66 +844,6 @@ export default function AdminDashboard() {
       {/* Contenido del Dashboard */}
       {activeTab === 'dashboard' && (
         <>
-          {/* Event Selector */}
-          <div style={{ padding: '15px 20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '20px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-            <label htmlFor="eventSelect" style={{ fontWeight: 'bold', color: 'white', fontSize: '16px' }}>
-              🎪 Evento:
-            </label>
-            <select
-              id="eventSelect"
-              value={selectedEventSlug}
-              onChange={(e) => setSelectedEventSlug(e.target.value)}
-              style={{
-                padding: '10px 15px',
-                borderRadius: '8px',
-                border: 'none',
-                fontSize: '14px',
-                minWidth: '280px',
-                fontWeight: '500'
-              }}
-            >
-              <option value={eventConfig.event.id}>{eventConfig.event.title} - {eventConfig.event.subtitle} (Default)</option>
-              {events.map((evt) => (
-                <option key={evt.id} value={evt.slug}>
-                  {evt.title} {evt.subtitle && `- ${evt.subtitle}`} {!evt.isActive && '(Inactivo)'}
-                </option>
-              ))}
-            </select>
-            {selectedEventSlug && selectedEventSlug !== eventConfig.event.id && (
-              <a
-                href={`/${selectedEventSlug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  padding: '10px 15px',
-                  background: 'white',
-                  color: '#667eea',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-              >
-                🔗 Ver Página
-              </a>
-            )}
-            <button
-              onClick={() => setActiveTab('eventos')}
-              style={{
-                padding: '10px 15px',
-                background: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                border: '2px solid white',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              + Nueva Fiesta
-            </button>
-          </div>
-
           {/* Estadísticas */}
           <div className={styles.stats}>
             <div className={styles.statCard}>
@@ -1161,14 +1246,14 @@ export default function AdminDashboard() {
               <div className={styles.configFormGroup}>
                 <label className={styles.configLabel}>URL de la Imagen</label>
                 <input
-                  type="url"
+                  type="text"
                   className={styles.configInput}
                   value={configForm.backgroundImage}
                   onChange={(e) => setConfigForm({ ...configForm, backgroundImage: e.target.value })}
-                  placeholder="https://ejemplo.com/imagen.jpg"
+                  placeholder="/background.png o https://ejemplo.com/imagen.jpg"
                 />
                 <p className={styles.configHelper}>
-                  💡 Tip: Sube tu imagen a un servicio como Imgur o usa una URL directa
+                  💡 Tip: Usa una ruta relativa como /background.png o una URL completa
                 </p>
               </div>
 
@@ -1177,6 +1262,102 @@ export default function AdminDashboard() {
                   <img src={configForm.backgroundImage} alt="Preview" />
                 </div>
               )}
+            </div>
+
+            <div className={styles.configSection}>
+              <h3 className={styles.configSectionTitle}>🎨 Colores del Tema</h3>
+              <p className={styles.configHelper} style={{ marginBottom: '15px' }}>
+                Personaliza los colores de la página de tu evento
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Color Primario (Título)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="color"
+                      value={configForm.primaryColor}
+                      onChange={(e) => setConfigForm({ ...configForm, primaryColor: e.target.value })}
+                      style={{ width: '60px', height: '40px', border: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      className={styles.configInput}
+                      value={configForm.primaryColor}
+                      onChange={(e) => setConfigForm({ ...configForm, primaryColor: e.target.value })}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Color Secundario (Subtítulo)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="color"
+                      value={configForm.secondaryColor}
+                      onChange={(e) => setConfigForm({ ...configForm, secondaryColor: e.target.value })}
+                      style={{ width: '60px', height: '40px', border: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      className={styles.configInput}
+                      value={configForm.secondaryColor}
+                      onChange={(e) => setConfigForm({ ...configForm, secondaryColor: e.target.value })}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.configFormGroup}>
+                  <label className={styles.configLabel}>Color Acento (RSVP)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="color"
+                      value={configForm.accentColor}
+                      onChange={(e) => setConfigForm({ ...configForm, accentColor: e.target.value })}
+                      style={{ width: '60px', height: '40px', border: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      className={styles.configInput}
+                      value={configForm.accentColor}
+                      onChange={(e) => setConfigForm({ ...configForm, accentColor: e.target.value })}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview de colores */}
+              <div style={{ marginTop: '20px', padding: '20px', background: '#1a0033', borderRadius: '10px' }}>
+                <p style={{ color: 'white', marginBottom: '10px', fontSize: '14px' }}>Vista previa:</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                  <span style={{ color: configForm.primaryColor, fontSize: '24px', fontWeight: 'bold', textShadow: `0 0 10px ${configForm.primaryColor}` }}>
+                    TÍTULO
+                  </span>
+                  <span style={{ color: configForm.secondaryColor, fontSize: '18px', textShadow: `0 0 10px ${configForm.secondaryColor}` }}>
+                    Subtítulo
+                  </span>
+                  <button
+                    type="button"
+                    style={{
+                      background: `linear-gradient(135deg, ${configForm.primaryColor}, ${configForm.secondaryColor})`,
+                      color: 'white',
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      cursor: 'default'
+                    }}
+                  >
+                    CONFIRMAR
+                  </button>
+                  <span style={{ color: configForm.accentColor, fontWeight: 'bold' }}>
+                    RSVP INDISPENSABLE
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className={styles.configFormButtons}>

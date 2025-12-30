@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
+import { neon } from '@neondatabase/serverless'
+import eventConfig from '@/event-config.json'
 
 interface RouteParams {
     params: Promise<{ slug: string }>
@@ -8,27 +10,205 @@ interface RouteParams {
 /**
  * GET /api/events/[slug]
  * Get a specific event by its URL slug
+ * Supports both DB events and the default event from event-config.json
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
         const { slug } = await params
+        console.log('📖 GET /api/events/' + slug)
+
+        // Check if this is the default event from config
+        const isDefaultEvent = slug === eventConfig.event.id
 
         if (isDatabaseConfigured()) {
             const { getEventBySlug } = await import('@/lib/queries')
             const event = await getEventBySlug(slug)
 
-            if (!event) {
+            if (event) {
+                console.log('✅ Evento encontrado en DB:', event.title)
+
+                // Also fetch event_settings to get additional configuration
+                const dbUrl = process.env.DATABASE_URL
+                let mergedEvent = { ...event }
+
+                if (dbUrl) {
+                    try {
+                        const sql = neon(dbUrl)
+                        const settingsRows = await sql`SELECT * FROM event_settings WHERE event_id = ${slug}`
+
+                        if (settingsRows.length > 0) {
+                            const settings = settingsRows[0]
+                            console.log('✅ Settings encontrados, combinando datos...')
+
+                            // Override with settings data (settings take priority)
+                            mergedEvent = {
+                                ...event,
+                                title: settings.title || event.title,
+                                subtitle: settings.subtitle || event.subtitle,
+                                date: settings.date || event.date,
+                                time: settings.time || event.time,
+                                location: settings.location || event.location,
+                                details: settings.details || event.details,
+                                backgroundImage: {
+                                    url: settings.background_image_url || event.backgroundImageUrl || '/background.png'
+                                },
+                                price: {
+                                    enabled: settings.price_enabled ?? event.priceEnabled ?? false,
+                                    amount: settings.price_amount ?? event.priceAmount ?? 0,
+                                    currency: settings.price_currency ?? 'MXN'
+                                },
+                                capacity: {
+                                    enabled: settings.capacity_enabled ?? event.capacityEnabled ?? false,
+                                    limit: settings.capacity_limit ?? event.capacityLimit ?? 0
+                                },
+                                theme: {
+                                    primaryColor: settings.primary_color || eventConfig.theme.primaryColor,
+                                    secondaryColor: settings.secondary_color || eventConfig.theme.secondaryColor,
+                                    accentColor: settings.accent_color || eventConfig.theme.accentColor,
+                                    backgroundColor: eventConfig.theme.backgroundColor,
+                                    textColor: eventConfig.theme.textColor
+                                }
+                            }
+                        } else {
+                            // No settings, use event data with default structure
+                            mergedEvent = {
+                                ...event,
+                                backgroundImage: {
+                                    url: event.backgroundImageUrl || '/background.png'
+                                },
+                                price: {
+                                    enabled: event.priceEnabled ?? false,
+                                    amount: event.priceAmount ?? 0,
+                                    currency: 'MXN'
+                                },
+                                capacity: {
+                                    enabled: event.capacityEnabled ?? false,
+                                    limit: event.capacityLimit ?? 0
+                                },
+                                theme: eventConfig.theme
+                            }
+                        }
+                    } catch (settingsError) {
+                        console.error('Error al cargar settings:', settingsError)
+                    }
+                }
+
                 return NextResponse.json({
-                    success: false,
-                    error: 'Evento no encontrado'
-                }, { status: 404 })
+                    success: true,
+                    event: mergedEvent
+                })
+            }
+
+            // If not found in DB but is the default event, build from config + settings
+            if (isDefaultEvent) {
+                console.log('📖 Usando evento default con settings de DB')
+                const dbUrl = process.env.DATABASE_URL
+
+                if (dbUrl) {
+                    const sql = neon(dbUrl)
+                    const rows = await sql`SELECT * FROM event_settings WHERE event_id = ${slug}`
+
+                    if (rows.length > 0) {
+                        const settings = rows[0]
+                        console.log('✅ Settings encontrados para evento default:', settings.title)
+
+                        return NextResponse.json({
+                            success: true,
+                            event: {
+                                id: eventConfig.event.id,
+                                slug: eventConfig.event.id,
+                                title: settings.title || eventConfig.event.title,
+                                subtitle: settings.subtitle || eventConfig.event.subtitle,
+                                date: settings.date || eventConfig.event.date,
+                                time: settings.time || eventConfig.event.time,
+                                location: settings.location || eventConfig.event.location,
+                                details: settings.details || eventConfig.event.details,
+                                price: {
+                                    enabled: settings.price_enabled || false,
+                                    amount: settings.price_amount || 0,
+                                    currency: settings.price_currency || 'MXN'
+                                },
+                                capacity: {
+                                    enabled: settings.capacity_enabled || false,
+                                    limit: settings.capacity_limit || 0
+                                },
+                                backgroundImage: {
+                                    url: settings.background_image_url || eventConfig.event.backgroundImage
+                                },
+                                theme: {
+                                    primaryColor: settings.primary_color || eventConfig.theme.primaryColor,
+                                    secondaryColor: settings.secondary_color || eventConfig.theme.secondaryColor,
+                                    accentColor: settings.accent_color || eventConfig.theme.accentColor,
+                                    backgroundColor: eventConfig.theme.backgroundColor,
+                                    textColor: eventConfig.theme.textColor
+                                },
+                                contact: eventConfig.contact,
+                                isActive: true
+                            }
+                        })
+                    }
+                }
+
+                // Fallback to pure config data
+                console.log('📖 Usando evento default puro del config')
+                return NextResponse.json({
+                    success: true,
+                    event: {
+                        id: eventConfig.event.id,
+                        slug: eventConfig.event.id,
+                        title: eventConfig.event.title,
+                        subtitle: eventConfig.event.subtitle,
+                        date: eventConfig.event.date,
+                        time: eventConfig.event.time,
+                        location: eventConfig.event.location,
+                        details: eventConfig.event.details,
+                        price: {
+                            enabled: false,
+                            amount: 0,
+                            currency: 'MXN'
+                        },
+                        capacity: {
+                            enabled: false,
+                            limit: 0
+                        },
+                        backgroundImage: {
+                            url: eventConfig.event.backgroundImage
+                        },
+                        theme: eventConfig.theme,
+                        contact: eventConfig.contact,
+                        isActive: true
+                    }
+                })
             }
 
             return NextResponse.json({
-                success: true,
-                event
-            })
+                success: false,
+                error: 'Evento no encontrado'
+            }, { status: 404 })
         } else {
+            // No DB but is default event - return from config
+            if (isDefaultEvent) {
+                return NextResponse.json({
+                    success: true,
+                    event: {
+                        id: eventConfig.event.id,
+                        slug: eventConfig.event.id,
+                        title: eventConfig.event.title,
+                        subtitle: eventConfig.event.subtitle,
+                        date: eventConfig.event.date,
+                        time: eventConfig.event.time,
+                        location: eventConfig.event.location,
+                        details: eventConfig.event.details,
+                        price: { enabled: false, amount: 0, currency: 'MXN' },
+                        capacity: { enabled: false, limit: 0 },
+                        backgroundImage: { url: eventConfig.event.backgroundImage },
+                        theme: eventConfig.theme,
+                        contact: eventConfig.contact,
+                        isActive: true
+                    }
+                })
+            }
+
             return NextResponse.json({
                 success: false,
                 error: 'Base de datos no configurada'
@@ -172,7 +352,7 @@ function verifyAuth(authHeader: string): boolean {
         const base64Credentials = authHeader.replace('Basic ', '')
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
         const [username, password] = credentials.split(':')
-        return username === 'admin' && password === 'rooftop2024!'
+        return username === 'admin' && password === 'partytime'
     } catch {
         return false
     }
