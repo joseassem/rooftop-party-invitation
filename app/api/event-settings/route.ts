@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { neon } from '@neondatabase/serverless'
 import eventConfig from '@/event-config.json'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/event-settings?eventId=X
- * Obtiene la configuración de un evento específico desde la base de datos
+ * Obtiene la configuración de un evento específico
+ * Now reads directly from the 'events' table (consolidated)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,53 +14,56 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('eventId') || eventConfig.event.id
 
-    const { getEventSettings } = await import('@/lib/queries')
-    const result = await getEventSettings(eventId)
+    const { getEventBySlug } = await import('@/lib/queries')
+    const event = await getEventBySlug(eventId)
 
-    if (result) {
+    if (event) {
+      // Extract theme from jsonb or use defaults
+      const theme = (event.theme as any) || {}
+
       return NextResponse.json({
         success: true,
         settings: {
-          eventId: result.eventId,
-          title: result.title,
-          subtitle: result.subtitle || '',
-          date: result.date || '',
-          time: result.time || '',
-          location: result.location || '',
-          details: result.details || '',
+          eventId: event.slug,
+          title: event.title,
+          subtitle: event.subtitle || '',
+          date: event.date || '',
+          time: event.time || '',
+          location: event.location || '',
+          details: event.details || '',
           price: {
-            enabled: result.priceEnabled || false,
-            amount: result.priceAmount || 0,
-            currency: result.priceCurrency || 'MXN'
+            enabled: event.priceEnabled || false,
+            amount: event.priceAmount || 0,
+            currency: event.priceCurrency || 'MXN'
           },
           capacity: {
-            enabled: result.capacityEnabled || false,
-            limit: result.capacityLimit || 0
+            enabled: event.capacityEnabled || false,
+            limit: event.capacityLimit || 0
           },
           backgroundImage: {
-            url: result.backgroundImageUrl || '/background.png'
+            url: event.backgroundImageUrl || '/background.png'
           },
           theme: {
-            primaryColor: result.primaryColor || '#FF1493',
-            secondaryColor: result.secondaryColor || '#00FFFF',
-            accentColor: result.accentColor || '#FFD700'
+            primaryColor: theme.primaryColor || '#FF1493',
+            secondaryColor: theme.secondaryColor || '#00FFFF',
+            accentColor: theme.accentColor || '#FFD700'
           }
         },
         source: 'database'
       })
     }
 
-    // Return default/empty config for new events
+    // Return default/empty config for new events or fallback to static config
     return NextResponse.json({
       success: true,
       settings: {
         eventId: eventId,
-        title: '',
-        subtitle: '',
-        date: '',
-        time: '',
-        location: '',
-        details: '',
+        title: eventConfig.event.title,
+        subtitle: eventConfig.event.subtitle,
+        date: eventConfig.event.date,
+        time: eventConfig.event.time,
+        location: eventConfig.event.location,
+        details: eventConfig.event.details,
         price: {
           enabled: false,
           amount: 0,
@@ -71,15 +74,15 @@ export async function GET(request: NextRequest) {
           limit: 0
         },
         backgroundImage: {
-          url: '/background.png'
+          url: eventConfig.event.backgroundImage || '/background.png'
         },
         theme: {
-          primaryColor: '#FF1493',
-          secondaryColor: '#00FFFF',
-          accentColor: '#FFD700'
+          primaryColor: eventConfig.theme?.primaryColor || '#FF1493',
+          secondaryColor: eventConfig.theme?.secondaryColor || '#00FFFF',
+          accentColor: eventConfig.theme?.accentColor || '#FFD700'
         }
       },
-      source: 'new'
+      source: 'config'
     })
 
   } catch (error) {

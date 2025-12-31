@@ -3,9 +3,9 @@
  * Replaces Firestore functions with Drizzle ORM + Neon
  */
 
-import { db, isDatabaseConfigured, rsvps, events, eventSettings, appSettings } from './db'
+import { db, isDatabaseConfigured, rsvps, events, appSettings } from './db'
 import { eq, desc, and } from 'drizzle-orm'
-import type { Event, NewEvent, RSVP, NewRSVP, EventSettings } from './schema'
+import type { Event, NewEvent, RSVP, NewRSVP } from './schema'
 import crypto from 'crypto'
 
 // ============================================
@@ -239,7 +239,8 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
 }
 
 /**
- * Get event by slug with merged settings (for metadata)
+ * Get event by slug (simplified - no settings merge needed)
+ * Returns formatted event data for metadata generation
  */
 export async function getEventBySlugWithSettings(slug: string): Promise<{
     id: string
@@ -254,17 +255,15 @@ export async function getEventBySlugWithSettings(slug: string): Promise<{
     const event = await getEventBySlug(slug)
     if (!event) return null
 
-    const settings = await getEventSettings(event.id)
-
     return {
         id: event.id,
         slug: event.slug,
-        title: settings?.title ?? event.title,
-        subtitle: settings?.subtitle ?? event.subtitle ?? '',
-        date: settings?.date ?? event.date ?? '',
-        time: settings?.time ?? event.time ?? '',
-        location: settings?.location ?? event.location ?? '',
-        backgroundImageUrl: settings?.backgroundImageUrl ?? event.backgroundImageUrl,
+        title: event.title,
+        subtitle: event.subtitle ?? '',
+        date: event.date ?? '',
+        time: event.time ?? '',
+        location: event.location ?? '',
+        backgroundImageUrl: event.backgroundImageUrl,
     }
 }
 
@@ -332,146 +331,6 @@ export async function deleteEvent(eventId: string, hardDelete: boolean = false):
     }
 
     return true
-}
-
-// ============================================
-// Event Settings Functions (backwards compatibility)
-// ============================================
-
-/**
- * Get event settings by eventId - searches by both UUID and slug
- */
-export async function getEventSettings(eventId: string): Promise<EventSettings | null> {
-    if (!db) throw new Error('Database not configured')
-
-    // Try to find by exact eventId first
-    const [result] = await db.select()
-        .from(eventSettings)
-        .where(eq(eventSettings.eventId, eventId))
-        .limit(1)
-
-    if (result) return result
-
-    // If not found, try to find by slug (in case eventId is a UUID but settings were saved with slug)
-    // First, get the event to find its slug
-    const event = await getEventById(eventId)
-    if (event && event.slug !== eventId) {
-        const [resultBySlug] = await db.select()
-            .from(eventSettings)
-            .where(eq(eventSettings.eventId, event.slug))
-            .limit(1)
-
-        if (resultBySlug) return resultBySlug
-    }
-
-    return null
-}
-
-/**
- * Get event with merged settings (settings override base event data)
- * This is used for metadata generation to show configured values
- */
-export async function getEventWithSettings(eventId: string): Promise<{
-    id: string
-    slug: string
-    title: string
-    subtitle: string
-    date: string
-    time: string
-    location: string
-    backgroundImageUrl: string | null
-} | null> {
-    if (!db) throw new Error('Database not configured')
-
-    const event = await getEventById(eventId)
-    if (!event) return null
-
-    const settings = await getEventSettings(eventId)
-
-    // Settings override base event data
-    return {
-        id: event.id,
-        slug: event.slug,
-        title: settings?.title ?? event.title,
-        subtitle: settings?.subtitle ?? event.subtitle ?? '',
-        date: settings?.date ?? event.date ?? '',
-        time: settings?.time ?? event.time ?? '',
-        location: settings?.location ?? event.location ?? '',
-        backgroundImageUrl: settings?.backgroundImageUrl ?? event.backgroundImageUrl,
-    }
-}
-
-/**
- * Save event settings
- */
-export async function saveEventSettings(
-    settings: Omit<EventSettings, 'id' | 'updatedAt'>
-): Promise<EventSettings> {
-    if (!db) throw new Error('Database not configured')
-
-    console.log('💾 [saveEventSettings] Starting save for eventId:', settings.eventId)
-
-    // Check if settings record exists (try by exact eventId first)
-    const existing = await getEventSettings(settings.eventId)
-
-    let result: EventSettings
-
-    if (existing) {
-        console.log('📝 [saveEventSettings] Updating existing settings record:', existing.id)
-        // Update existing record using its unique ID
-        const [updated] = await db.update(eventSettings)
-            .set({ ...settings, updatedAt: new Date() })
-            .where(eq(eventSettings.id, existing.id)) // Use actual primary key
-            .returning()
-        result = updated
-    } else {
-        console.log('🆕 [saveEventSettings] Creating new settings record')
-        // Insert new record
-        const [created] = await db.insert(eventSettings)
-            .values(settings)
-            .returning()
-        result = created
-    }
-
-    // SYNC: Also update the 'events' table for consistency
-    // This ensures that either table provides the correct data
-    try {
-        const event = await getEventBySlug(settings.eventId)
-        if (event) {
-            console.log('🔄 [saveEventSettings] Syncing events table for:', event.id)
-            await db.update(events)
-                .set({
-                    title: settings.title,
-                    subtitle: settings.subtitle,
-                    date: settings.date,
-                    time: settings.time,
-                    location: settings.location,
-                    details: settings.details,
-                    priceEnabled: settings.priceEnabled,
-                    priceAmount: settings.priceAmount,
-                    priceCurrency: settings.priceCurrency,
-                    capacityEnabled: settings.capacityEnabled,
-                    capacityLimit: settings.capacityLimit,
-                    backgroundImageUrl: settings.backgroundImageUrl,
-                    theme: {
-                        primaryColor: settings.primaryColor || '#FF1493',
-                        secondaryColor: settings.secondaryColor || '#00FFFF',
-                        accentColor: settings.accentColor || '#FFD700',
-                        backgroundColor: '#1a0033', // Keep default or current
-                        textColor: '#ffffff'
-                    },
-                    updatedAt: new Date()
-                })
-                .where(eq(events.id, event.id))
-        } else {
-            console.warn('⚠️ [saveEventSettings] Event not found for syncing:', settings.eventId)
-        }
-    } catch (syncError) {
-        // Log but don't fail the main operation
-        console.error('❌ [saveEventSettings] Failed to sync events table:', syncError)
-    }
-
-    return result
 }
 
 // ============================================

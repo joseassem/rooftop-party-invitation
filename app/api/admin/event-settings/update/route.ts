@@ -5,6 +5,7 @@ import { validateAdminAuth, getUnauthorizedResponse } from '@/lib/auth'
 /**
  * POST /api/admin/event-settings/update
  * Actualiza la configuración del evento (requiere autenticación admin)
+ * Now directly updates the 'events' table (consolidated)
  */
 export async function POST(request: NextRequest) {
   // Verificar autenticación básica
@@ -23,40 +24,51 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Preparar settings
-    const settings = {
-      eventId: body.eventId,
-      title: body.title,
-      subtitle: body.subtitle || '',
-      date: body.date || '',
-      time: body.time || '',
-      location: body.location || '',
-      details: body.details || '',
-      priceEnabled: body.price?.enabled || false,
-      priceAmount: body.price?.amount || 0,
-      priceCurrency: body.price?.currency || 'MXN',
-      capacityEnabled: body.capacity?.enabled || false,
-      capacityLimit: body.capacity?.limit || 0,
-      backgroundImageUrl: body.backgroundImage?.url || '/background.png',
-      // Theme colors
-      primaryColor: body.theme?.primaryColor || '#FF1493',
-      secondaryColor: body.theme?.secondaryColor || '#00FFFF',
-      accentColor: body.theme?.accentColor || '#FFD700'
-    }
-
     if (isDatabaseConfigured()) {
-      const { saveEventSettings } = await import('@/lib/queries')
-      console.log('📝 Saving event settings for eventId:', settings.eventId)
-      console.log('📝 Settings data:', JSON.stringify(settings, null, 2))
+      const { getEventBySlug, updateEvent } = await import('@/lib/queries')
+
+      // Find the event by slug or ID
+      const event = await getEventBySlug(body.eventId)
+      if (!event) {
+        return NextResponse.json({
+          success: false,
+          message: 'Evento no encontrado'
+        }, { status: 404 })
+      }
+
+      console.log('📝 Updating event for eventId:', event.id)
+
+      // Prepare update data
+      const updates = {
+        title: body.title,
+        subtitle: body.subtitle || '',
+        date: body.date || '',
+        time: body.time || '',
+        location: body.location || '',
+        details: body.details || '',
+        priceEnabled: body.price?.enabled || false,
+        priceAmount: body.price?.amount || 0,
+        priceCurrency: body.price?.currency || 'MXN',
+        capacityEnabled: body.capacity?.enabled || false,
+        capacityLimit: body.capacity?.limit || 0,
+        backgroundImageUrl: body.backgroundImage?.url || '/background.png',
+        theme: {
+          primaryColor: body.theme?.primaryColor || '#FF1493',
+          secondaryColor: body.theme?.secondaryColor || '#00FFFF',
+          accentColor: body.theme?.accentColor || '#FFD700',
+          backgroundColor: '#1a0033',
+          textColor: '#ffffff'
+        }
+      }
 
       try {
-        const result = await saveEventSettings(settings)
-        console.log('✅ Event settings saved successfully:', result?.id || 'no id returned')
+        const result = await updateEvent(event.id, updates)
+        console.log('✅ Event updated successfully:', result.id)
 
         return NextResponse.json({
           success: true,
           message: 'Configuración actualizada correctamente',
-          savedId: result?.id
+          savedId: result.id
         })
       } catch (saveError) {
         console.error('❌ Database save error:', saveError)

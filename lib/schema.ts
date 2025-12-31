@@ -81,48 +81,6 @@ export const rsvps = pgTable('rsvps', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-/**
- * Event settings (for backwards compatibility with existing config)
- * 
- * H-006 DEPRECATION NOTICE:
- * This table duplicates fields from the `events` table and should be consolidated.
- * Plan: Migrate all event_settings data to events table, then remove this table.
- * 
- * MIGRATION STEPS:
- * 1. Update saveEventSettings() to write to events table instead
- * 2. Update getEventSettings() to read from events table
- * 3. Run data migration script to copy eventSettings → events
- * 4. Remove this table and related queries
- * 
- * @deprecated Use `events` table directly for new features
- */
-export const eventSettings = pgTable('event_settings', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    eventId: text('event_id').notNull().unique(),
-    title: text('title').notNull(),
-    subtitle: text('subtitle').default(''),
-    date: text('date').default(''),
-    time: text('time').default(''),
-    location: text('location').default(''),
-    details: text('details').default(''),
-
-    priceEnabled: boolean('price_enabled').default(false),
-    priceAmount: integer('price_amount').default(0),
-    priceCurrency: varchar('price_currency', { length: 10 }).default('MXN'),
-
-    capacityEnabled: boolean('capacity_enabled').default(false),
-    capacityLimit: integer('capacity_limit').default(0),
-
-    backgroundImageUrl: text('background_image_url').default('/background.png'),
-
-    // Theme colors
-    primaryColor: varchar('primary_color', { length: 10 }).default('#FF1493'),
-    secondaryColor: varchar('secondary_color', { length: 10 }).default('#00FFFF'),
-    accentColor: varchar('accent_color', { length: 10 }).default('#FFD700'),
-
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
-
 // Application settings for global configuration
 export const appSettings = pgTable('app_settings', {
     id: text('id').primaryKey(), // 'home_event_id', etc.
@@ -136,4 +94,3 @@ export type Event = typeof events.$inferSelect
 export type NewEvent = typeof events.$inferInsert
 export type RSVP = typeof rsvps.$inferSelect
 export type NewRSVP = typeof rsvps.$inferInsert
-export type EventSettings = typeof eventSettings.$inferSelect

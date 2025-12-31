@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
 import { validateAdminAuth, getUnauthorizedResponse } from '@/lib/auth'
-import { neon } from '@neondatabase/serverless'
 import eventConfig from '@/event-config.json'
 
 export const dynamic = 'force-dynamic'
@@ -13,7 +12,7 @@ interface RouteParams {
 /**
  * GET /api/events/[slug]
  * Get a specific event by its URL slug
- * Supports both DB events and the default event from event-config.json
+ * Now reads directly from the 'events' table (consolidated)
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
@@ -27,110 +26,40 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             const event = await getEventBySlug(slug)
 
             if (event) {
-                // Fetch event_settings using the robust query function
-                const { getEventSettings } = await import('@/lib/queries')
-                const settings = await getEventSettings(slug)
+                // Extract theme from jsonb or use defaults
+                const theme = (event.theme as any) || eventConfig.theme
 
-                let mergedEvent: any = { ...event }
-
-                if (settings) {
-                    console.log('🔗 [api/events/slug] Merging settings for event:', slug)
-                    // Override with settings data (settings take priority)
-                    mergedEvent = {
-                        ...event,
-                        title: settings.title || event.title,
-                        subtitle: settings.subtitle || event.subtitle,
-                        date: settings.date || event.date,
-                        time: settings.time || event.time,
-                        location: settings.location || event.location,
-                        details: settings.details || event.details,
-                        backgroundImage: {
-                            url: settings.backgroundImageUrl || event.backgroundImageUrl || '/background.png'
-                        },
-                        price: {
-                            enabled: settings.priceEnabled ?? event.priceEnabled ?? false,
-                            amount: settings.priceAmount ?? event.priceAmount ?? 0,
-                            currency: settings.priceCurrency ?? 'MXN'
-                        },
-                        capacity: {
-                            enabled: settings.capacityEnabled ?? event.capacityEnabled ?? false,
-                            limit: settings.capacityLimit ?? event.capacityLimit ?? 0
-                        },
-                        theme: {
-                            primaryColor: settings.primaryColor || eventConfig.theme.primaryColor,
-                            secondaryColor: settings.secondaryColor || eventConfig.theme.secondaryColor,
-                            accentColor: settings.accentColor || eventConfig.theme.accentColor,
-                            backgroundColor: eventConfig.theme.backgroundColor,
-                            textColor: eventConfig.theme.textColor
-                        }
-                    }
-                } else {
-                    // No settings, use event data with default structure
-                    mergedEvent = {
-                        ...event,
-                        backgroundImage: {
-                            url: event.backgroundImageUrl || '/background.png'
-                        },
-                        price: {
-                            enabled: event.priceEnabled ?? false,
-                            amount: event.priceAmount ?? 0,
-                            currency: 'MXN'
-                        },
-                        capacity: {
-                            enabled: event.capacityEnabled ?? false,
-                            limit: event.capacityLimit ?? 0
-                        },
-                        theme: eventConfig.theme
+                const formattedEvent = {
+                    ...event,
+                    backgroundImage: {
+                        url: event.backgroundImageUrl || '/background.png'
+                    },
+                    price: {
+                        enabled: event.priceEnabled ?? false,
+                        amount: event.priceAmount ?? 0,
+                        currency: event.priceCurrency || 'MXN'
+                    },
+                    capacity: {
+                        enabled: event.capacityEnabled ?? false,
+                        limit: event.capacityLimit ?? 0
+                    },
+                    theme: {
+                        primaryColor: theme.primaryColor || eventConfig.theme.primaryColor,
+                        secondaryColor: theme.secondaryColor || eventConfig.theme.secondaryColor,
+                        accentColor: theme.accentColor || eventConfig.theme.accentColor,
+                        backgroundColor: theme.backgroundColor || eventConfig.theme.backgroundColor,
+                        textColor: theme.textColor || eventConfig.theme.textColor
                     }
                 }
 
                 return NextResponse.json({
                     success: true,
-                    event: mergedEvent
+                    event: formattedEvent
                 })
             }
 
-            // If not found in DB but is the default event, build from config + settings
+            // If not found in DB but is the default event, build from config
             if (isDefaultEvent) {
-                const { getEventSettings } = await import('@/lib/queries')
-                const settings = await getEventSettings(slug)
-
-                if (settings) {
-                    return NextResponse.json({
-                        success: true,
-                        event: {
-                            id: eventConfig.event.id,
-                            slug: eventConfig.event.id,
-                            title: settings.title || eventConfig.event.title,
-                            subtitle: settings.subtitle || eventConfig.event.subtitle,
-                            date: settings.date || eventConfig.event.date,
-                            time: settings.time || eventConfig.event.time,
-                            location: settings.location || eventConfig.event.location,
-                            details: settings.details || eventConfig.event.details,
-                            price: {
-                                enabled: settings.priceEnabled || false,
-                                amount: settings.priceAmount || 0,
-                                currency: settings.priceCurrency || 'MXN'
-                            },
-                            capacity: {
-                                enabled: settings.capacityEnabled || false,
-                                limit: settings.capacityLimit || 0
-                            },
-                            backgroundImage: {
-                                url: settings.backgroundImageUrl || eventConfig.event.backgroundImage
-                            },
-                            theme: {
-                                primaryColor: settings.primaryColor || eventConfig.theme.primaryColor,
-                                secondaryColor: settings.secondaryColor || eventConfig.theme.secondaryColor,
-                                accentColor: settings.accentColor || eventConfig.theme.accentColor,
-                                backgroundColor: eventConfig.theme.backgroundColor,
-                                textColor: eventConfig.theme.textColor
-                            },
-                            contact: eventConfig.contact,
-                            isActive: true
-                        }
-                    })
-                }
 
                 // Fallback to pure config data
                 return NextResponse.json({
