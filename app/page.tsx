@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import eventConfig from '../event-config.json'
 import { unstable_noStore as noStore } from 'next/cache'
-import { getAppSetting, getEventById, getEventWithSettings } from '@/lib/queries'
+import { getAppSetting, getEventById, getEventBySlugWithSettings } from '@/lib/queries'
 import { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,7 @@ export const revalidate = 0
 export async function generateMetadata(): Promise<Metadata> {
   const homeEventId = await getAppSetting('home_event_id')
   const eventId = homeEventId || eventConfig.event.id
-  const event = await getEventWithSettings(eventId)
+  const event = await getEventBySlugWithSettings(eventId)
   const baseUrl = 'https://party.timekast.mx'
 
   if (!event) {
