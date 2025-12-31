@@ -9,17 +9,8 @@ import autoTable from 'jspdf-autotable'
 import eventConfig from '@/event-config.json'
 import styles from './admin.module.css'
 import type { Event } from '@/types/event'
-
-interface RSVP {
-  id: string
-  name: string
-  email: string
-  phone: string
-  plusOne: boolean
-  createdAt: string
-  status: 'confirmed' | 'cancelled'
-  emailSent?: string
-}
+// H-008 FIX: Import extracted components to reduce monolithic file size
+import { LoginForm, StatsCards, type RSVP } from './components'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -130,8 +121,13 @@ export default function AdminDashboard() {
       const targetEventId = eventId || selectedEventId
       console.log('🔄 Cargando RSVPs para evento:', targetEventId)
 
+      const authHeader = sessionStorage.getItem('admin_auth')
       // Cargar RSVPs desde la API con filtro por evento
-      const response = await fetch(`/api/rsvp?eventId=${encodeURIComponent(targetEventId)}`)
+      const response = await fetch(`/api/rsvp?eventId=${encodeURIComponent(targetEventId)}`, {
+        headers: {
+          'Authorization': `Basic ${authHeader}`
+        }
+      })
 
       if (!response.ok) {
         throw new Error('Error al cargar RSVPs')
@@ -186,7 +182,12 @@ export default function AdminDashboard() {
   // Cargar lista de eventos
   const loadEvents = async () => {
     try {
-      const response = await fetch('/api/events')
+      const authHeader = sessionStorage.getItem('admin_auth')
+      const response = await fetch('/api/events', {
+        headers: {
+          'Authorization': `Basic ${authHeader}`
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.events) {
@@ -259,7 +260,12 @@ export default function AdminDashboard() {
   const loadEventConfig = async (eventId: string) => {
     try {
       console.log('⚙️ Cargando configuración para evento:', eventId)
-      const response = await fetch(`/api/event-settings?eventId=${encodeURIComponent(eventId)}`)
+      const authHeader = sessionStorage.getItem('admin_auth')
+      const response = await fetch(`/api/event-settings?eventId=${encodeURIComponent(eventId)}`, {
+        headers: {
+          'Authorization': `Basic ${authHeader}`
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.settings) {
@@ -761,41 +767,15 @@ export default function AdminDashboard() {
     emailsSent: rsvps.filter(r => r.emailSent).length,
   }
 
+  // H-008 FIX: Use extracted LoginForm component
   if (!isAuthenticated) {
     return (
-      <div className={styles.loginContainer}>
-        <div className={styles.loginBox}>
-          <h1>🔐 Admin Dashboard</h1>
-          <p>{eventConfig.event.title}</p>
-
-          <form onSubmit={handleLogin} className={styles.loginForm} autoComplete="off">
-            <input
-              type="text"
-              placeholder="Usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              required
-            />
-            <button type="submit" disabled={loading}>
-              {loading ? 'Verificando...' : 'Iniciar Sesión'}
-            </button>
-          </form>
-
-          {message && <p className={styles.message}>{message}</p>}
-        </div>
-      </div>
+      <LoginForm
+        onLoginSuccess={(credentials) => {
+          setIsAuthenticated(true)
+          loadRSVPs()
+        }}
+      />
     )
   }
 
@@ -896,33 +876,8 @@ export default function AdminDashboard() {
       {/* Contenido del Dashboard */}
       {activeTab === 'dashboard' && (
         <>
-          {/* Estadísticas */}
-          <div className={styles.stats}>
-            <div className={styles.statCard}>
-              <h3>{stats.totalGuests}</h3>
-              <p>👥 Invitados</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{stats.total}</h3>
-              <p>📋 RSVPs</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{stats.confirmed}</h3>
-              <p>✅ Confirmados</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{stats.plusOne}</h3>
-              <p>➕ Con +1</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{stats.cancelled}</h3>
-              <p>❌ Cancelados</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{stats.emailsSent}</h3>
-              <p>✉️ Emails</p>
-            </div>
-          </div>
+          {/* H-008 FIX: Use extracted StatsCards component */}
+          <StatsCards stats={stats} />
 
           {/* Controles */}
           <div className={styles.controls}>

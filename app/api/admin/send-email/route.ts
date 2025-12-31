@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdminAuth, getUnauthorizedResponse } from '@/lib/auth'
 import { resend, FROM_EMAIL } from '@/lib/resend'
-import { generateConfirmationEmail } from '@/lib/email-template'
-import { generateCancelToken, recordEmailSent } from '@/lib/queries'
+import { generateConfirmationEmail, EventData } from '@/lib/email-template'
+import { generateCancelToken, recordEmailSent, getRSVPById, getEventBySlug } from '@/lib/queries'
 import eventConfig from '@/event-config.json'
 
 export async function POST(request: NextRequest) {
@@ -22,6 +22,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // H-005 FIX: Fetch the actual event data for this RSVP
+    let eventData: EventData | undefined
+    try {
+      const rsvp = await getRSVPById(rsvpId)
+      if (rsvp && rsvp.eventId) {
+        const event = await getEventBySlug(rsvp.eventId)
+        if (event) {
+          // Build EventData from the actual event
+          const theme = (event.theme as any) || eventConfig.theme
+          eventData = {
+            title: event.title,
+            subtitle: event.subtitle || '',
+            date: event.date || '',
+            time: event.time || '',
+            location: event.location || '',
+            details: event.details || '',
+            price: event.priceEnabled ? `$${event.priceAmount} ${event.priceCurrency || 'MXN'}` : null,
+            theme: {
+              primaryColor: theme.primaryColor || eventConfig.theme.primaryColor,
+              secondaryColor: theme.secondaryColor || eventConfig.theme.secondaryColor,
+              accentColor: theme.accentColor || eventConfig.theme.accentColor,
+              backgroundColor: theme.backgroundColor || eventConfig.theme.backgroundColor
+            },
+            contact: {
+              hostEmail: event.hostEmail || eventConfig.contact.hostEmail
+            }
+          }
+        }
+      }
+    } catch (eventError) {
+      console.warn('Could not load event data for email, using defaults:', eventError)
+    }
+
     // Determinar tipo de email según estado
     const isCancelled = status === 'cancelled'
     const isReminder = !isCancelled && !!emailSent
@@ -33,23 +66,25 @@ export async function POST(request: NextRequest) {
     // Limpiar cualquier = que pueda estar al inicio (bug de encoding en emails)
     cancelUrl = cancelUrl.replace(/^=+/, '').trim()
 
-    // Generar HTML del email
+    // Generar HTML del email con datos dinámicos del evento
     const htmlContent = generateConfirmationEmail({
       name,
       plusOne: plusOne || false,
       cancelUrl,
       isReminder,
-      isCancelled
+      isCancelled,
+      eventData // H-005 FIX: Pass dynamic event data
     })
 
-    // Asunto según tipo de email
+    // Asunto según tipo de email - use dynamic title if available
+    const eventTitle = eventData?.title || eventConfig.event.title
     let subject
     if (isCancelled) {
-      subject = `Te extrañamos - ${eventConfig.event.title}`
+      subject = `Te extrañamos - ${eventTitle}`
     } else if (isReminder) {
-      subject = `Recordatorio - ${eventConfig.event.title}`
+      subject = `Recordatorio - ${eventTitle}`
     } else {
-      subject = `Confirmación - ${eventConfig.event.title}`
+      subject = `Confirmación - ${eventTitle}`
     }
 
     // Enviar email con Resend
@@ -68,7 +103,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Registrar envío en Firestore
+    // Registrar envío en base de datos
     const emailType = isCancelled ? 're-invitation' : (isReminder ? 'reminder' : 'confirmation')
     await recordEmailSent(rsvpId, emailType)
 
