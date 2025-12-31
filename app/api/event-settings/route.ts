@@ -14,52 +14,40 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('eventId') || eventConfig.event.id
 
-    const dbUrl = process.env.DATABASE_URL
+    const { getEventSettings } = await import('@/lib/queries')
+    const result = await getEventSettings(eventId)
 
-    if (dbUrl) {
-      try {
-        const sql = neon(dbUrl)
-
-        // Query directa sin ORM
-        const rows = await sql`SELECT * FROM event_settings WHERE event_id = ${eventId}`
-
-        if (rows.length > 0) {
-          const row = rows[0]
-
-          return NextResponse.json({
-            success: true,
-            settings: {
-              eventId: row.event_id,
-              title: row.title,
-              subtitle: row.subtitle || '',
-              date: row.date || '',
-              time: row.time || '',
-              location: row.location || '',
-              details: row.details || '',
-              price: {
-                enabled: row.price_enabled || false,
-                amount: row.price_amount || 0,
-                currency: row.price_currency || 'MXN'
-              },
-              capacity: {
-                enabled: row.capacity_enabled || false,
-                limit: row.capacity_limit || 0
-              },
-              backgroundImage: {
-                url: row.background_image_url || '/background.png'
-              },
-              theme: {
-                primaryColor: row.primary_color || '#FF1493',
-                secondaryColor: row.secondary_color || '#00FFFF',
-                accentColor: row.accent_color || '#FFD700'
-              }
-            },
-            source: 'database'
-          })
-        }
-      } catch (dbError) {
-        console.error('Error al consultar base de datos:', dbError)
-      }
+    if (result) {
+      return NextResponse.json({
+        success: true,
+        settings: {
+          eventId: result.eventId,
+          title: result.title,
+          subtitle: result.subtitle || '',
+          date: result.date || '',
+          time: result.time || '',
+          location: result.location || '',
+          details: result.details || '',
+          price: {
+            enabled: result.priceEnabled || false,
+            amount: result.priceAmount || 0,
+            currency: result.priceCurrency || 'MXN'
+          },
+          capacity: {
+            enabled: result.capacityEnabled || false,
+            limit: result.capacityLimit || 0
+          },
+          backgroundImage: {
+            url: result.backgroundImageUrl || '/background.png'
+          },
+          theme: {
+            primaryColor: result.primaryColor || '#FF1493',
+            secondaryColor: result.secondaryColor || '#00FFFF',
+            accentColor: result.accentColor || '#FFD700'
+          }
+        },
+        source: 'database'
+      })
     }
 
     // Return default/empty config for new events

@@ -27,69 +27,60 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             const event = await getEventBySlug(slug)
 
             if (event) {
+                // Fetch event_settings using the robust query function
+                const { getEventSettings } = await import('@/lib/queries')
+                const settings = await getEventSettings(slug)
 
-                // Also fetch event_settings to get additional configuration
-                const dbUrl = process.env.DATABASE_URL
                 let mergedEvent: any = { ...event }
 
-                if (dbUrl) {
-                    try {
-                        const sql = neon(dbUrl)
-                        const settingsRows = await sql`SELECT * FROM event_settings WHERE event_id = ${slug}`
-
-                        if (settingsRows.length > 0) {
-                            const settings = settingsRows[0]
-
-                            // Override with settings data (settings take priority)
-                            mergedEvent = {
-                                ...event,
-                                title: settings.title || event.title,
-                                subtitle: settings.subtitle || event.subtitle,
-                                date: settings.date || event.date,
-                                time: settings.time || event.time,
-                                location: settings.location || event.location,
-                                details: settings.details || event.details,
-                                backgroundImage: {
-                                    url: settings.background_image_url || event.backgroundImageUrl || '/background.png'
-                                },
-                                price: {
-                                    enabled: settings.price_enabled ?? event.priceEnabled ?? false,
-                                    amount: settings.price_amount ?? event.priceAmount ?? 0,
-                                    currency: settings.price_currency ?? 'MXN'
-                                },
-                                capacity: {
-                                    enabled: settings.capacity_enabled ?? event.capacityEnabled ?? false,
-                                    limit: settings.capacity_limit ?? event.capacityLimit ?? 0
-                                },
-                                theme: {
-                                    primaryColor: settings.primary_color || eventConfig.theme.primaryColor,
-                                    secondaryColor: settings.secondary_color || eventConfig.theme.secondaryColor,
-                                    accentColor: settings.accent_color || eventConfig.theme.accentColor,
-                                    backgroundColor: eventConfig.theme.backgroundColor,
-                                    textColor: eventConfig.theme.textColor
-                                }
-                            }
-                        } else {
-                            // No settings, use event data with default structure
-                            mergedEvent = {
-                                ...event,
-                                backgroundImage: {
-                                    url: event.backgroundImageUrl || '/background.png'
-                                },
-                                price: {
-                                    enabled: event.priceEnabled ?? false,
-                                    amount: event.priceAmount ?? 0,
-                                    currency: 'MXN'
-                                },
-                                capacity: {
-                                    enabled: event.capacityEnabled ?? false,
-                                    limit: event.capacityLimit ?? 0
-                                },
-                                theme: eventConfig.theme
-                            }
+                if (settings) {
+                    console.log('🔗 [api/events/slug] Merging settings for event:', slug)
+                    // Override with settings data (settings take priority)
+                    mergedEvent = {
+                        ...event,
+                        title: settings.title || event.title,
+                        subtitle: settings.subtitle || event.subtitle,
+                        date: settings.date || event.date,
+                        time: settings.time || event.time,
+                        location: settings.location || event.location,
+                        details: settings.details || event.details,
+                        backgroundImage: {
+                            url: settings.backgroundImageUrl || event.backgroundImageUrl || '/background.png'
+                        },
+                        price: {
+                            enabled: settings.priceEnabled ?? event.priceEnabled ?? false,
+                            amount: settings.priceAmount ?? event.priceAmount ?? 0,
+                            currency: settings.priceCurrency ?? 'MXN'
+                        },
+                        capacity: {
+                            enabled: settings.capacityEnabled ?? event.capacityEnabled ?? false,
+                            limit: settings.capacityLimit ?? event.capacityLimit ?? 0
+                        },
+                        theme: {
+                            primaryColor: settings.primaryColor || eventConfig.theme.primaryColor,
+                            secondaryColor: settings.secondaryColor || eventConfig.theme.secondaryColor,
+                            accentColor: settings.accentColor || eventConfig.theme.accentColor,
+                            backgroundColor: eventConfig.theme.backgroundColor,
+                            textColor: eventConfig.theme.textColor
                         }
-                    } catch (settingsError) {
-                        console.error('Error al cargar settings:', settingsError)
+                    }
+                } else {
+                    // No settings, use event data with default structure
+                    mergedEvent = {
+                        ...event,
+                        backgroundImage: {
+                            url: event.backgroundImageUrl || '/background.png'
+                        },
+                        price: {
+                            enabled: event.priceEnabled ?? false,
+                            amount: event.priceAmount ?? 0,
+                            currency: 'MXN'
+                        },
+                        capacity: {
+                            enabled: event.capacityEnabled ?? false,
+                            limit: event.capacityLimit ?? 0
+                        },
+                        theme: eventConfig.theme
                     }
                 }
 
@@ -101,50 +92,44 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
             // If not found in DB but is the default event, build from config + settings
             if (isDefaultEvent) {
-                const dbUrl = process.env.DATABASE_URL
+                const { getEventSettings } = await import('@/lib/queries')
+                const settings = await getEventSettings(slug)
 
-                if (dbUrl) {
-                    const sql = neon(dbUrl)
-                    const rows = await sql`SELECT * FROM event_settings WHERE event_id = ${slug}`
-
-                    if (rows.length > 0) {
-                        const settings = rows[0]
-
-                        return NextResponse.json({
-                            success: true,
-                            event: {
-                                id: eventConfig.event.id,
-                                slug: eventConfig.event.id,
-                                title: settings.title || eventConfig.event.title,
-                                subtitle: settings.subtitle || eventConfig.event.subtitle,
-                                date: settings.date || eventConfig.event.date,
-                                time: settings.time || eventConfig.event.time,
-                                location: settings.location || eventConfig.event.location,
-                                details: settings.details || eventConfig.event.details,
-                                price: {
-                                    enabled: settings.price_enabled || false,
-                                    amount: settings.price_amount || 0,
-                                    currency: settings.price_currency || 'MXN'
-                                },
-                                capacity: {
-                                    enabled: settings.capacity_enabled || false,
-                                    limit: settings.capacity_limit || 0
-                                },
-                                backgroundImage: {
-                                    url: settings.background_image_url || eventConfig.event.backgroundImage
-                                },
-                                theme: {
-                                    primaryColor: settings.primary_color || eventConfig.theme.primaryColor,
-                                    secondaryColor: settings.secondary_color || eventConfig.theme.secondaryColor,
-                                    accentColor: settings.accent_color || eventConfig.theme.accentColor,
-                                    backgroundColor: eventConfig.theme.backgroundColor,
-                                    textColor: eventConfig.theme.textColor
-                                },
-                                contact: eventConfig.contact,
-                                isActive: true
-                            }
-                        })
-                    }
+                if (settings) {
+                    return NextResponse.json({
+                        success: true,
+                        event: {
+                            id: eventConfig.event.id,
+                            slug: eventConfig.event.id,
+                            title: settings.title || eventConfig.event.title,
+                            subtitle: settings.subtitle || eventConfig.event.subtitle,
+                            date: settings.date || eventConfig.event.date,
+                            time: settings.time || eventConfig.event.time,
+                            location: settings.location || eventConfig.event.location,
+                            details: settings.details || eventConfig.event.details,
+                            price: {
+                                enabled: settings.priceEnabled || false,
+                                amount: settings.priceAmount || 0,
+                                currency: settings.priceCurrency || 'MXN'
+                            },
+                            capacity: {
+                                enabled: settings.capacityEnabled || false,
+                                limit: settings.capacityLimit || 0
+                            },
+                            backgroundImage: {
+                                url: settings.backgroundImageUrl || eventConfig.event.backgroundImage
+                            },
+                            theme: {
+                                primaryColor: settings.primaryColor || eventConfig.theme.primaryColor,
+                                secondaryColor: settings.secondaryColor || eventConfig.theme.secondaryColor,
+                                accentColor: settings.accentColor || eventConfig.theme.accentColor,
+                                backgroundColor: eventConfig.theme.backgroundColor,
+                                textColor: eventConfig.theme.textColor
+                            },
+                            contact: eventConfig.contact,
+                            isActive: true
+                        }
+                    })
                 }
 
                 // Fallback to pure config data

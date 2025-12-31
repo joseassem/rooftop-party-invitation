@@ -409,23 +409,69 @@ export async function saveEventSettings(
 ): Promise<EventSettings> {
     if (!db) throw new Error('Database not configured')
 
-    // Check if exists
+    console.log('💾 [saveEventSettings] Starting save for eventId:', settings.eventId)
+
+    // Check if settings record exists (try by exact eventId first)
     const existing = await getEventSettings(settings.eventId)
 
+    let result: EventSettings
+
     if (existing) {
-        // Update
+        console.log('📝 [saveEventSettings] Updating existing settings record:', existing.id)
+        // Update existing record using its unique ID
         const [updated] = await db.update(eventSettings)
             .set({ ...settings, updatedAt: new Date() })
-            .where(eq(eventSettings.eventId, settings.eventId))
+            .where(eq(eventSettings.id, existing.id)) // Use actual primary key
             .returning()
-        return updated
+        result = updated
     } else {
-        // Insert
+        console.log('🆕 [saveEventSettings] Creating new settings record')
+        // Insert new record
         const [created] = await db.insert(eventSettings)
             .values(settings)
             .returning()
-        return created
+        result = created
     }
+
+    // SYNC: Also update the 'events' table for consistency
+    // This ensures that either table provides the correct data
+    try {
+        const event = await getEventBySlug(settings.eventId)
+        if (event) {
+            console.log('🔄 [saveEventSettings] Syncing events table for:', event.id)
+            await db.update(events)
+                .set({
+                    title: settings.title,
+                    subtitle: settings.subtitle,
+                    date: settings.date,
+                    time: settings.time,
+                    location: settings.location,
+                    details: settings.details,
+                    priceEnabled: settings.priceEnabled,
+                    priceAmount: settings.priceAmount,
+                    priceCurrency: settings.priceCurrency,
+                    capacityEnabled: settings.capacityEnabled,
+                    capacityLimit: settings.capacityLimit,
+                    backgroundImageUrl: settings.backgroundImageUrl,
+                    theme: {
+                        primaryColor: settings.primaryColor || '#FF1493',
+                        secondaryColor: settings.secondaryColor || '#00FFFF',
+                        accentColor: settings.accentColor || '#FFD700',
+                        backgroundColor: '#1a0033', // Keep default or current
+                        textColor: '#ffffff'
+                    },
+                    updatedAt: new Date()
+                })
+                .where(eq(events.id, event.id))
+        } else {
+            console.warn('⚠️ [saveEventSettings] Event not found for syncing:', settings.eventId)
+        }
+    } catch (syncError) {
+        // Log but don't fail the main operation
+        console.error('❌ [saveEventSettings] Failed to sync events table:', syncError)
+    }
+
+    return result
 }
 
 // ============================================
