@@ -2,7 +2,13 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import eventConfig from '../event-config.json'
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://party.timekast.mx'
 
+export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
+  title: eventConfig.event.title,
+  description: eventConfig.event.subtitle,
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
