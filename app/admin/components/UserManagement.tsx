@@ -234,7 +234,7 @@ export default function UserManagement({ events }: UserManagementProps) {
     }
 
     return (
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '20px', color: '#1f2937' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2>👥 Gestión de Usuarios</h2>
                 <button
