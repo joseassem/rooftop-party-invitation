@@ -28,7 +28,7 @@ export default function AdminDashboard() {
 
   // Estado para multi-party
   const [events, setEvents] = useState<Event[]>([])
-  const [selectedEventId, setSelectedEventId] = useState<string>(eventConfig.event.id)
+  const [selectedEventId, setSelectedEventId] = useState<string>('') // Will be set from homeEventId
   const [homeEventId, setHomeEventId] = useState<string>('')
 
 
@@ -254,6 +254,23 @@ export default function AdminDashboard() {
       loadAppSettings()
     }
   }, [isAuthenticated])
+
+  // Auto-select home event when homeEventId is loaded
+  useEffect(() => {
+    if (homeEventId && !selectedEventId) {
+      // Find the event slug that matches homeEventId (which is the UUID)
+      const homeEvent = events.find(e => e.id === homeEventId)
+      if (homeEvent) {
+        setSelectedEventId(homeEvent.slug)
+      } else if (events.length > 0) {
+        // Fallback to first event if home event not found
+        setSelectedEventId(events[0].slug)
+      }
+    } else if (!selectedEventId && events.length > 0) {
+      // If no home event set, select the first available
+      setSelectedEventId(events[0].slug)
+    }
+  }, [homeEventId, events, selectedEventId])
 
 
   // Cargar configuración del evento seleccionado
@@ -811,10 +828,12 @@ export default function AdminDashboard() {
             fontWeight: '500'
           }}
         >
-          <option value={eventConfig.event.id}>{eventConfig.event.title} - {eventConfig.event.subtitle}</option>
+          {events.length === 0 && (
+            <option value="">Cargando eventos...</option>
+          )}
           {events.map((evt) => (
             <option key={evt.id} value={evt.slug}>
-              {evt.title} {evt.subtitle && `- ${evt.subtitle}`} {!evt.isActive && '(Inactivo)'}
+              {evt.title} {evt.subtitle && `- ${evt.subtitle}`} {!evt.isActive && '(Inactivo)'} {evt.id === homeEventId && '🏠'}
             </option>
           ))}
         </select>

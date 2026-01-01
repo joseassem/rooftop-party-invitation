@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
 import { validateAdminAuth, getUnauthorizedResponse } from '@/lib/auth'
-import eventConfig from '@/event-config.json'
 
 export const dynamic = 'force-dynamic'
+
+// Default theme colors (used when event has no theme set)
+const DEFAULT_THEME = {
+    primaryColor: '#FF1493',
+    secondaryColor: '#00FFFF',
+    accentColor: '#FFD700',
+    backgroundColor: '#1a0033',
+    textColor: '#ffffff'
+}
 
 interface RouteParams {
     params: Promise<{ slug: string }>
@@ -12,14 +20,11 @@ interface RouteParams {
 /**
  * GET /api/events/[slug]
  * Get a specific event by its URL slug
- * Now reads directly from the 'events' table (consolidated)
+ * All events must exist in the database
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
         const { slug } = await params
-
-        // Check if this is the default event from config
-        const isDefaultEvent = slug === eventConfig.event.id
 
         if (isDatabaseConfigured()) {
             const { getEventBySlug } = await import('@/lib/queries')
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
             if (event) {
                 // Extract theme from jsonb or use defaults
-                const theme = (event.theme as any) || eventConfig.theme
+                const theme = (event.theme as any) || DEFAULT_THEME
 
                 const formattedEvent = {
                     ...event,
@@ -44,11 +49,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                         limit: event.capacityLimit ?? 0
                     },
                     theme: {
-                        primaryColor: theme.primaryColor || eventConfig.theme.primaryColor,
-                        secondaryColor: theme.secondaryColor || eventConfig.theme.secondaryColor,
-                        accentColor: theme.accentColor || eventConfig.theme.accentColor,
-                        backgroundColor: theme.backgroundColor || eventConfig.theme.backgroundColor,
-                        textColor: theme.textColor || eventConfig.theme.textColor
+                        primaryColor: theme.primaryColor || DEFAULT_THEME.primaryColor,
+                        secondaryColor: theme.secondaryColor || DEFAULT_THEME.secondaryColor,
+                        accentColor: theme.accentColor || DEFAULT_THEME.accentColor,
+                        backgroundColor: theme.backgroundColor || DEFAULT_THEME.backgroundColor,
+                        textColor: theme.textColor || DEFAULT_THEME.textColor
                     }
                 }
 
@@ -58,68 +63,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 })
             }
 
-            // If not found in DB but is the default event, build from config
-            if (isDefaultEvent) {
-
-                // Fallback to pure config data
-                return NextResponse.json({
-                    success: true,
-                    event: {
-                        id: eventConfig.event.id,
-                        slug: eventConfig.event.id,
-                        title: eventConfig.event.title,
-                        subtitle: eventConfig.event.subtitle,
-                        date: eventConfig.event.date,
-                        time: eventConfig.event.time,
-                        location: eventConfig.event.location,
-                        details: eventConfig.event.details,
-                        price: {
-                            enabled: false,
-                            amount: 0,
-                            currency: 'MXN'
-                        },
-                        capacity: {
-                            enabled: false,
-                            limit: 0
-                        },
-                        backgroundImage: {
-                            url: eventConfig.event.backgroundImage
-                        },
-                        theme: eventConfig.theme,
-                        contact: eventConfig.contact,
-                        isActive: true
-                    }
-                })
-            }
-
+            // Event not found in database
             return NextResponse.json({
                 success: false,
                 error: 'Evento no encontrado'
             }, { status: 404 })
         } else {
-            // No DB but is default event - return from config
-            if (isDefaultEvent) {
-                return NextResponse.json({
-                    success: true,
-                    event: {
-                        id: eventConfig.event.id,
-                        slug: eventConfig.event.id,
-                        title: eventConfig.event.title,
-                        subtitle: eventConfig.event.subtitle,
-                        date: eventConfig.event.date,
-                        time: eventConfig.event.time,
-                        location: eventConfig.event.location,
-                        details: eventConfig.event.details,
-                        price: { enabled: false, amount: 0, currency: 'MXN' },
-                        capacity: { enabled: false, limit: 0 },
-                        backgroundImage: { url: eventConfig.event.backgroundImage },
-                        theme: eventConfig.theme,
-                        contact: eventConfig.contact,
-                        isActive: true
-                    }
-                })
-            }
-
+            // Database not configured
             return NextResponse.json({
                 success: false,
                 error: 'Base de datos no configurada'
