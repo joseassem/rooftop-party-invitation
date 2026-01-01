@@ -198,7 +198,6 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
 
   // Forzar URL absoluta si viene como path local
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://party.timekast.mx'
   if (imageUrl.startsWith('/')) imageUrl = `${baseUrl}${imageUrl}`
 
   try {
