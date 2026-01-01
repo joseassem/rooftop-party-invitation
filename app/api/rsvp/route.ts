@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Determine eventId: use eventSlug if provided, otherwise fall back to static config
     let eventId = eventConfig.event.id
+    let eventForEmail: Awaited<ReturnType<typeof import('@/lib/queries').getEventBySlug>> = null
 
     // Check if database is configured
     if (isDatabaseConfigured()) {
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
         const event = await getEventBySlug(eventSlug)
         if (event) {
           eventId = event.slug
+          eventForEmail = event // Store for email sending later
 
           // Check if event accepts RSVPs
           if (!event.isActive) {
@@ -71,21 +73,21 @@ export async function POST(request: NextRequest) {
       })
 
       // Check if automatic confirmation email is enabled for this event
-      if (event && event.emailConfirmationEnabled) {
+      if (eventForEmail && eventForEmail.emailConfirmationEnabled) {
         try {
           const { generateCancelToken, recordEmailSent } = await import('@/lib/queries')
           
           // Build EventData for the email template
-          const theme = (event.theme as any) || {}
+          const theme = (eventForEmail.theme as any) || {}
           const eventData: EventData = {
-            title: event.title,
-            subtitle: event.subtitle || '',
-            date: event.date || '',
-            time: event.time || '',
-            location: event.location || '',
-            details: event.details || '',
-            price: event.priceEnabled ? `$${event.priceAmount} ${event.priceCurrency || 'MXN'}` : null,
-            backgroundImageUrl: event.backgroundImageUrl || '/background.png',
+            title: eventForEmail.title,
+            subtitle: eventForEmail.subtitle || '',
+            date: eventForEmail.date || '',
+            time: eventForEmail.time || '',
+            location: eventForEmail.location || '',
+            details: eventForEmail.details || '',
+            price: eventForEmail.priceEnabled ? `$${eventForEmail.priceAmount} ${eventForEmail.priceCurrency || 'MXN'}` : null,
+            backgroundImageUrl: eventForEmail.backgroundImageUrl || '/background.png',
             theme: {
               primaryColor: theme.primaryColor || '#FF1493',
               secondaryColor: theme.secondaryColor || '#00FFFF',
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
               backgroundColor: theme.backgroundColor || '#1a0033'
             },
             contact: {
-              hostEmail: event.hostEmail || eventConfig.contact?.hostEmail
+              hostEmail: eventForEmail.hostEmail || eventConfig.contact?.hostEmail
             }
           }
 
@@ -115,14 +117,14 @@ export async function POST(request: NextRequest) {
           const { error: emailError } = await resend.emails.send({
             from: `Party Time! <${FROM_EMAIL}>`,
             to: email,
-            subject: `Confirmación - ${event.title}`,
+            subject: `Confirmación - ${eventForEmail.title}`,
             html: htmlContent
           })
 
           if (!emailError) {
             // Record email sent in database
             await recordEmailSent(rsvp.id, 'confirmation')
-            console.log(`✅ [RSVP] Auto-confirmation email sent to ${email} for event ${event.slug}`)
+            console.log(`✅ [RSVP] Auto-confirmation email sent to ${email} for event ${eventForEmail.slug}`)
           } else {
             console.error(`❌ [RSVP] Failed to send auto-confirmation email:`, emailError)
           }
