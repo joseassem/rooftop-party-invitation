@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEventBySlugWithSettings } from '@/lib/queries'
+import { existsSync, readFileSync } from 'fs'
+import { join } from 'path'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -94,7 +96,32 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { slug } = await params
   console.log(`[OG-Image] Processing request for slug: ${slug}`)
 
-  // defaults
+  // 1. Primero buscar si existe una imagen OG personalizada en public/
+  //    Formato: og-[slug].png o og-[slug].jpg
+  const publicDir = join(process.cwd(), 'public')
+  const customOgPng = join(publicDir, `og-${slug}.png`)
+  const customOgJpg = join(publicDir, `og-${slug}.jpg`)
+  
+  for (const customPath of [customOgPng, customOgJpg]) {
+    if (existsSync(customPath)) {
+      try {
+        const imageBuffer = readFileSync(customPath)
+        const ext = customPath.endsWith('.png') ? 'png' : 'jpeg'
+        console.log(`[OG-Image] Using custom OG image: ${customPath}`)
+        return new NextResponse(imageBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': `image/${ext}`,
+            'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        })
+      } catch (err) {
+        console.error(`[OG-Image] Error reading custom image:`, err)
+      }
+    }
+  }
+
+  // 2. Si no hay imagen personalizada, obtener datos del evento
   let title = 'Evento'
   let subtitle = ''
   let date = ''
