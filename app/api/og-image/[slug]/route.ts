@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEventBySlugWithSettings } from '@/lib/queries'
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
 import sharp from 'sharp'
 
 export const runtime = 'nodejs'
@@ -116,19 +114,31 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   // 1. Primero buscar si existe una imagen OG personalizada en public/
   //    Formato: og-[slug].png o og-[slug].jpg
-  const publicDir = join(process.cwd(), 'public')
-  const customOgPng = join(publicDir, `og-${slug}.png`)
-  const customOgJpg = join(publicDir, `og-${slug}.jpg`)
+  //    En Vercel, los archivos de public/ no están accesibles via readFileSync,
+  //    así que hacemos fetch desde la URL pública
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://party.timekast.mx'
   
-  for (const customPath of [customOgPng, customOgJpg]) {
-    if (existsSync(customPath)) {
-      try {
-        const imageBuffer = readFileSync(customPath)
-        console.log(`[OG-Image] Found custom OG image: ${customPath} (${(imageBuffer.length/1024).toFixed(0)}KB)`)
+  for (const ext of ['png', 'jpg']) {
+    const customOgUrl = `${baseUrl}/og-${slug}.${ext}`
+    try {
+      console.log(`[OG-Image] Checking for custom OG image: ${customOgUrl}`)
+      const customRes = await fetch(customOgUrl, { 
+        method: 'HEAD',
+        headers: { 'User-Agent': 'OG-Image-Generator/1.0' }
+      })
+      
+      if (customRes.ok) {
+        // La imagen existe, hacer fetch completo
+        console.log(`[OG-Image] Found custom OG image at ${customOgUrl}`)
+        const fullRes = await fetch(customOgUrl, {
+          headers: { 'User-Agent': 'OG-Image-Generator/1.0' }
+        })
+        const imageBuffer = Buffer.from(await fullRes.arrayBuffer())
+        console.log(`[OG-Image] Custom image size: ${(imageBuffer.length/1024).toFixed(0)}KB`)
         
         // Comprimir si es mayor a TARGET_SIZE_KB
         let finalBuffer: Buffer = imageBuffer
-        let contentType = customPath.endsWith('.png') ? 'image/png' : 'image/jpeg'
+        let contentType = ext === 'png' ? 'image/png' : 'image/jpeg'
         
         if (imageBuffer.length > TARGET_SIZE_KB * 1024) {
           console.log(`[OG-Image] Compressing image for WhatsApp compatibility...`)
@@ -137,16 +147,16 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           contentType = 'image/jpeg' // Sharp convierte a JPEG
         }
         
-        return new NextResponse(new Uint8Array(finalBuffer), {
+        return new NextResponse(finalBuffer, {
           status: 200,
           headers: {
             'Content-Type': contentType,
             'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
           },
         })
-      } catch (err) {
-        console.error(`[OG-Image] Error reading custom image:`, err)
       }
+    } catch (err) {
+      console.log(`[OG-Image] Custom image not found at ${customOgUrl}:`, err)
     }
   }
 
