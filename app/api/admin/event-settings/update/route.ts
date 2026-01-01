@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       console.log('📝 [update] Updating with location:', body.location)
 
       // Prepare update data
-      const updates = {
+      const updates: any = {
         title: body.title,
         subtitle: body.subtitle || '',
         date: body.date || '',
@@ -81,6 +81,25 @@ export async function POST(request: NextRequest) {
           accentColor: body.theme?.accentColor || '#FFD700',
           backgroundColor: '#1a0033',
           textColor: '#ffffff'
+        }
+      }
+
+      // Email configuration (only update if provided)
+      if (body.emailConfig !== undefined) {
+        updates.emailConfirmationEnabled = body.emailConfig.confirmationEnabled ?? false
+        updates.reminderEnabled = body.emailConfig.reminderEnabled ?? false
+        
+        // Handle reminder scheduled date
+        if (body.emailConfig.reminderScheduledAt) {
+          updates.reminderScheduledAt = new Date(body.emailConfig.reminderScheduledAt)
+        } else if (body.emailConfig.reminderEnabled === false) {
+          // Clear scheduled date if reminder is disabled
+          updates.reminderScheduledAt = null
+        }
+        
+        // If reminder is being re-enabled with a new date, clear the sentAt to allow re-sending
+        if (body.emailConfig.reminderEnabled && body.emailConfig.reminderScheduledAt && body.emailConfig.clearSentStatus) {
+          updates.reminderSentAt = null
         }
       }
 

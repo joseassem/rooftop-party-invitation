@@ -48,7 +48,12 @@ export default function AdminDashboard() {
     // Theme colors
     primaryColor: '#FF1493',
     secondaryColor: '#00FFFF',
-    accentColor: '#FFD700'
+    accentColor: '#FFD700',
+    // Email configuration
+    emailConfirmationEnabled: false,
+    reminderEnabled: false,
+    reminderScheduledAt: '',
+    reminderSentAt: null as string | null
   })
 
   // Filtros para MOSTRAR en tabla
@@ -275,7 +280,14 @@ export default function AdminDashboard() {
             // Theme colors
             primaryColor: data.settings.theme?.primaryColor || '#FF1493',
             secondaryColor: data.settings.theme?.secondaryColor || '#00FFFF',
-            accentColor: data.settings.theme?.accentColor || '#FFD700'
+            accentColor: data.settings.theme?.accentColor || '#FFD700',
+            // Email configuration
+            emailConfirmationEnabled: data.settings.emailConfig?.confirmationEnabled || false,
+            reminderEnabled: data.settings.emailConfig?.reminderEnabled || false,
+            reminderScheduledAt: data.settings.emailConfig?.reminderScheduledAt 
+              ? new Date(data.settings.emailConfig.reminderScheduledAt).toISOString().slice(0, 16) 
+              : '',
+            reminderSentAt: data.settings.emailConfig?.reminderSentAt || null
           })
         }
       }
@@ -772,6 +784,17 @@ export default function AdminDashboard() {
           primaryColor: configForm.primaryColor,
           secondaryColor: configForm.secondaryColor,
           accentColor: configForm.accentColor
+        },
+        // Email configuration
+        emailConfig: {
+          confirmationEnabled: configForm.emailConfirmationEnabled,
+          reminderEnabled: configForm.reminderEnabled,
+          reminderScheduledAt: configForm.reminderEnabled && configForm.reminderScheduledAt 
+            ? new Date(configForm.reminderScheduledAt).toISOString() 
+            : null,
+          // If user changes the reminder date after it was sent, allow re-sending
+          clearSentStatus: configForm.reminderSentAt && configForm.reminderScheduledAt && 
+            new Date(configForm.reminderScheduledAt).toISOString() !== configForm.reminderSentAt
         }
       }
 
@@ -1554,6 +1577,135 @@ export default function AdminDashboard() {
                     RSVP INDISPENSABLE
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Configuración de Emails */}
+            <div className={styles.configSection}>
+              <h3 className={styles.configSectionTitle}>📧 Configuración de Emails</h3>
+              <p className={styles.configHelper} style={{ marginBottom: '20px' }}>
+                Configura el envío automático de emails para este evento
+              </p>
+
+              {/* Email de Confirmación Automática */}
+              <div style={{ 
+                padding: '20px', 
+                background: '#f8fafc', 
+                borderRadius: '12px', 
+                marginBottom: '20px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <div className={styles.configToggleGroup}>
+                  <input
+                    type="checkbox"
+                    id="emailConfirmationEnabled"
+                    className={styles.configCheckbox}
+                    checked={configForm.emailConfirmationEnabled}
+                    onChange={(e) => setConfigForm({ ...configForm, emailConfirmationEnabled: e.target.checked })}
+                  />
+                  <label htmlFor="emailConfirmationEnabled" className={styles.configToggleLabel} style={{ fontWeight: '600' }}>
+                    ✉️ Enviar email de confirmación automático
+                  </label>
+                </div>
+                <p style={{ margin: '10px 0 0 28px', fontSize: '13px', color: '#64748b' }}>
+                  {configForm.emailConfirmationEnabled 
+                    ? '✅ Se enviará un email automáticamente cuando alguien confirme su asistencia'
+                    : '⏸️ Los emails de confirmación se enviarán manualmente desde el dashboard'}
+                </p>
+              </div>
+
+              {/* Recordatorio Programado */}
+              <div style={{ 
+                padding: '20px', 
+                background: configForm.reminderEnabled ? '#f0fdf4' : '#f8fafc', 
+                borderRadius: '12px',
+                border: `1px solid ${configForm.reminderEnabled ? '#86efac' : '#e2e8f0'}`,
+                transition: 'all 0.3s ease'
+              }}>
+                <div className={styles.configToggleGroup}>
+                  <input
+                    type="checkbox"
+                    id="reminderEnabled"
+                    className={styles.configCheckbox}
+                    checked={configForm.reminderEnabled}
+                    onChange={(e) => setConfigForm({ 
+                      ...configForm, 
+                      reminderEnabled: e.target.checked,
+                      // Clear date if disabling
+                      reminderScheduledAt: e.target.checked ? configForm.reminderScheduledAt : ''
+                    })}
+                  />
+                  <label htmlFor="reminderEnabled" className={styles.configToggleLabel} style={{ fontWeight: '600' }}>
+                    🔔 Programar recordatorio automático
+                  </label>
+                </div>
+                
+                {configForm.reminderEnabled && (
+                  <div style={{ marginTop: '15px', marginLeft: '28px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      Fecha y hora del recordatorio:
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={configForm.reminderScheduledAt}
+                      onChange={(e) => setConfigForm({ ...configForm, reminderScheduledAt: e.target.value })}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '14px',
+                        width: '100%',
+                        maxWidth: '300px'
+                      }}
+                      required={configForm.reminderEnabled}
+                    />
+                    <p style={{ marginTop: '8px', fontSize: '13px', color: '#64748b' }}>
+                      💡 El recordatorio se enviará automáticamente a todos los confirmados en la fecha programada
+                    </p>
+                  </div>
+                )}
+
+                {/* Estado del recordatorio */}
+                {configForm.reminderSentAt && (
+                  <div style={{ 
+                    marginTop: '15px', 
+                    marginLeft: '28px',
+                    padding: '12px 16px',
+                    background: '#dcfce7',
+                    borderRadius: '8px',
+                    border: '1px solid #86efac'
+                  }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#166534', fontWeight: '500' }}>
+                      ✅ Recordatorio enviado el {new Date(configForm.reminderSentAt).toLocaleDateString('es-MX', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {!configForm.reminderEnabled && (
+                  <p style={{ margin: '10px 0 0 28px', fontSize: '13px', color: '#64748b' }}>
+                    ⏸️ No hay recordatorio programado para este evento
+                  </p>
+                )}
+              </div>
+
+              {/* Nota informativa */}
+              <div style={{ 
+                marginTop: '20px', 
+                padding: '15px', 
+                background: '#fef3c7', 
+                borderRadius: '8px',
+                border: '1px solid #fcd34d'
+              }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#92400e' }}>
+                  <strong>📌 Nota:</strong> Los recordatorios solo se envían a invitados <strong>confirmados</strong> de este evento específico. 
+                  Los cancelados no recibirán el recordatorio automático.
+                </p>
               </div>
             </div>
 

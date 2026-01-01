@@ -4,6 +4,8 @@ import { isDatabaseConfigured } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { validateSession } from '@/lib/auth-utils'
 import { userHasEventAccess } from '@/lib/user-queries'
+import { resend, FROM_EMAIL } from '@/lib/resend'
+import { generateConfirmationEmail, EventData } from '@/lib/email-template'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +69,68 @@ export async function POST(request: NextRequest) {
         plusOne,
         eventId,
       })
+
+      // Check if automatic confirmation email is enabled for this event
+      if (event && event.emailConfirmationEnabled) {
+        try {
+          const { generateCancelToken, recordEmailSent } = await import('@/lib/queries')
+          
+          // Build EventData for the email template
+          const theme = (event.theme as any) || {}
+          const eventData: EventData = {
+            title: event.title,
+            subtitle: event.subtitle || '',
+            date: event.date || '',
+            time: event.time || '',
+            location: event.location || '',
+            details: event.details || '',
+            price: event.priceEnabled ? `$${event.priceAmount} ${event.priceCurrency || 'MXN'}` : null,
+            backgroundImageUrl: event.backgroundImageUrl || '/background.png',
+            theme: {
+              primaryColor: theme.primaryColor || '#FF1493',
+              secondaryColor: theme.secondaryColor || '#00FFFF',
+              accentColor: theme.accentColor || '#FFD700',
+              backgroundColor: theme.backgroundColor || '#1a0033'
+            },
+            contact: {
+              hostEmail: event.hostEmail || eventConfig.contact?.hostEmail
+            }
+          }
+
+          // Generate cancel token and URL
+          const cancelToken = generateCancelToken(rsvp.id, email)
+          const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cancel/${rsvp.id}?token=${cancelToken}`
+
+          // Generate email HTML
+          const htmlContent = generateConfirmationEmail({
+            name,
+            plusOne,
+            cancelUrl,
+            isReminder: false,
+            isCancelled: false,
+            eventData
+          })
+
+          // Send email
+          const { error: emailError } = await resend.emails.send({
+            from: `Party Time! <${FROM_EMAIL}>`,
+            to: email,
+            subject: `Confirmación - ${event.title}`,
+            html: htmlContent
+          })
+
+          if (!emailError) {
+            // Record email sent in database
+            await recordEmailSent(rsvp.id, 'confirmation')
+            console.log(`✅ [RSVP] Auto-confirmation email sent to ${email} for event ${event.slug}`)
+          } else {
+            console.error(`❌ [RSVP] Failed to send auto-confirmation email:`, emailError)
+          }
+        } catch (emailErr) {
+          // Don't fail the RSVP if email fails, just log it
+          console.error(`❌ [RSVP] Error sending auto-confirmation email:`, emailErr)
+        }
+      }
 
       return NextResponse.json(
         {

@@ -4,7 +4,7 @@
  */
 
 import { db, isDatabaseConfigured, rsvps, events, appSettings } from './db'
-import { eq, desc, and } from 'drizzle-orm'
+import { eq, desc, and, isNull, lte } from 'drizzle-orm'
 import type { Event, NewEvent, RSVP, NewRSVP } from './schema'
 
 // ============================================
@@ -444,3 +444,54 @@ export async function saveAppSetting(id: string, value: string): Promise<void> {
     }
 }
 
+// ============================================
+// Email Reminder Functions
+// ============================================
+
+/**
+ * Get events with pending reminders to send
+ * Conditions: reminderEnabled = true, reminderScheduledAt <= now, reminderSentAt IS NULL
+ */
+export async function getEventsWithPendingReminders(): Promise<Event[]> {
+    if (!db) throw new Error('Database not configured')
+
+    const now = new Date()
+
+    const result = await db.select()
+        .from(events)
+        .where(and(
+            eq(events.reminderEnabled, true),
+            eq(events.isActive, true),
+            lte(events.reminderScheduledAt, now),
+            isNull(events.reminderSentAt)
+        ))
+
+    return result
+}
+
+/**
+ * Mark reminder as sent for an event
+ */
+export async function markReminderSent(eventId: string): Promise<void> {
+    if (!db) throw new Error('Database not configured')
+
+    await db.update(events)
+        .set({ reminderSentAt: new Date(), updatedAt: new Date() })
+        .where(eq(events.id, eventId))
+}
+
+/**
+ * Get confirmed RSVPs for reminder (only confirmed, no cancelled)
+ */
+export async function getConfirmedRSVPsForReminder(eventSlug: string): Promise<RSVP[]> {
+    if (!db) throw new Error('Database not configured')
+
+    const result = await db.select()
+        .from(rsvps)
+        .where(and(
+            eq(rsvps.eventId, eventSlug),
+            eq(rsvps.status, 'confirmed')
+        ))
+
+    return result
+}

@@ -54,6 +54,12 @@ export const events = pgTable('events', {
     // Status
     isActive: boolean('is_active').default(true),
 
+    // Email configuration
+    emailConfirmationEnabled: boolean('email_confirmation_enabled').default(false),
+    reminderEnabled: boolean('reminder_enabled').default(false),
+    reminderScheduledAt: timestamp('reminder_scheduled_at'),
+    reminderSentAt: timestamp('reminder_sent_at'),
+
     // Timestamps
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

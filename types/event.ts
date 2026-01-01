@@ -41,6 +41,15 @@ export interface Event {
         hostPhone?: string
     }
     isActive: boolean      // Can guests still RSVP?
+    
+    // Email configuration
+    emailConfig: {
+        confirmationEnabled: boolean  // Send automatic confirmation on RSVP
+        reminderEnabled: boolean      // Enable scheduled reminder
+        reminderScheduledAt: string | null  // When to send the reminder
+        reminderSentAt: string | null       // When the reminder was actually sent
+    }
+    
     createdAt: string
     updatedAt: string
 }

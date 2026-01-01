@@ -75,6 +75,13 @@ export async function GET(request: NextRequest) {
             primaryColor: theme.primaryColor || '#FF1493',
             secondaryColor: theme.secondaryColor || '#00FFFF',
             accentColor: theme.accentColor || '#FFD700'
+          },
+          // Email configuration
+          emailConfig: {
+            confirmationEnabled: event.emailConfirmationEnabled || false,
+            reminderEnabled: event.reminderEnabled || false,
+            reminderScheduledAt: event.reminderScheduledAt ? event.reminderScheduledAt.toISOString() : null,
+            reminderSentAt: event.reminderSentAt ? event.reminderSentAt.toISOString() : null
           }
         },
         source: 'database'
@@ -108,6 +115,13 @@ export async function GET(request: NextRequest) {
           primaryColor: eventConfig.theme?.primaryColor || '#FF1493',
           secondaryColor: eventConfig.theme?.secondaryColor || '#00FFFF',
           accentColor: eventConfig.theme?.accentColor || '#FFD700'
+        },
+        // Email configuration (defaults)
+        emailConfig: {
+          confirmationEnabled: false,
+          reminderEnabled: false,
+          reminderScheduledAt: null,
+          reminderSentAt: null
         }
       },
       source: 'config'
