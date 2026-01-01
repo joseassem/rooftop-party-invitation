@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Party Time!',
-    short_name: 'Party',
+    short_name: 'Party Time!',
     description: 'Party Time! — Invitaciones y RSVP para eventos increíbles',
     start_url: '/',
     display: 'standalone',
