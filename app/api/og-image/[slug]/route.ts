@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ImageResponse } from 'next/og'
 import React from 'react'
-import eventConfig from '@/event-config.json'
 import { getEventBySlugWithSettings } from '@/lib/queries'
 
 export const runtime = 'nodejs'
@@ -9,8 +8,9 @@ export const dynamic = 'force-dynamic'
 
 const OG_SIZE = { width: 1200, height: 630 }
 const MAX_BYTES = 5 * 1024 * 1024 // 5MB (límite práctico para scrapers como WhatsApp/FB)
+const FETCH_TIMEOUT = 8000 // 8 segundos timeout para fetch de imagen
 
-function fallbackOg(title: string, subtitle: string, date: string, time: string, location: string) {
+function createFallbackOg(title: string, subtitle: string, date: string, time: string, location: string) {
   const rootStyle: React.CSSProperties = {
     height: '100%',
     width: '100%',
@@ -86,34 +86,65 @@ function fallbackOg(title: string, subtitle: string, date: string, time: string,
   )
 }
 
+// Fallback simple sin ImageResponse (para casos donde ImageResponse falla)
+function simpleFallbackResponse() {
+  // Devolver un placeholder 1x1 pixel PNG transparente
+  const pixel = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64'
+  )
+  return new NextResponse(pixel, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'no-cache',
+    },
+  })
+}
+
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  console.log(`[OG-Image] Processing request for slug: ${slug}`)
 
   // defaults
-  let title = eventConfig.event.title
-  let subtitle = eventConfig.event.subtitle
-  let date = eventConfig.event.date
-  let time = eventConfig.event.time
-  let location = eventConfig.event.location
-
+  let title = 'Evento'
+  let subtitle = ''
+  let date = ''
+  let time = ''
+  let location = ''
   let imageUrl: string | null = null
 
   try {
     const event = await getEventBySlugWithSettings(slug)
     if (event) {
-      title = event.title
-      subtitle = event.subtitle
-      date = event.date
-      time = event.time
-      location = event.location
+      title = event.title || 'Evento'
+      subtitle = event.subtitle || ''
+      date = event.date || ''
+      time = event.time || ''
+      location = event.location || ''
       imageUrl = event.backgroundImageUrl || null
+      console.log(`[OG-Image] Event found: ${title}, imageUrl: ${imageUrl}`)
+    } else {
+      console.log(`[OG-Image] Event not found for slug: ${slug}`)
     }
-  } catch {
-    // ignore, usamos fallback
+  } catch (err) {
+    console.error(`[OG-Image] Error fetching event:`, err)
   }
 
+  // Helper para devolver fallback con manejo de errores
+  const returnFallback = async () => {
+    try {
+      return createFallbackOg(title, subtitle, date, time, location)
+    } catch (fallbackErr) {
+      console.error(`[OG-Image] Fallback ImageResponse failed:`, fallbackErr)
+      return simpleFallbackResponse()
+    }
+  }
+
+  // Si no hay imagen configurada, usar fallback generado
   if (!imageUrl) {
-    return fallbackOg(title, subtitle, date, time, location)
+    console.log(`[OG-Image] No image URL, using generated fallback`)
+    return returnFallback()
   }
 
   // Forzar URL absoluta si viene como path local
@@ -121,37 +152,63 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (imageUrl.startsWith('/')) imageUrl = `${baseUrl}${imageUrl}`
 
   try {
+    // Crear AbortController para timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+
+    console.log(`[OG-Image] Fetching image from: ${imageUrl}`)
+    
     const res = await fetch(imageUrl, {
       redirect: 'follow',
-      // Un UA más "scraper-friendly" reduce bloqueos de algunos CDNs
+      signal: controller.signal,
       headers: {
-        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        // Simular un navegador real para evitar bloqueos
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
         'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': baseUrl,
       },
     })
 
+    clearTimeout(timeoutId)
+
     if (!res.ok) {
-      return fallbackOg(title, subtitle, date, time, location)
+      console.log(`[OG-Image] Fetch failed with status: ${res.status}`)
+      return returnFallback()
     }
 
-    const contentType = res.headers.get('content-type') || 'image/jpeg'
-    const buf = Buffer.from(await res.arrayBuffer())
+    const contentType = res.headers.get('content-type') || 'image/png'
+    
+    // Verificar que sea una imagen válida
+    if (!contentType.startsWith('image/')) {
+      console.log(`[OG-Image] Invalid content type: ${contentType}`)
+      return returnFallback()
+    }
 
-    // Si es demasiado grande, WhatsApp suele ignorarlo → devolvemos fallback optimizado.
+    const buf = Buffer.from(await res.arrayBuffer())
+    console.log(`[OG-Image] Image fetched successfully, size: ${buf.byteLength} bytes`)
+
+    // Verificar que el buffer no esté vacío
+    if (buf.byteLength < 1000) {
+      console.log(`[OG-Image] Image too small or empty (${buf.byteLength} bytes), using fallback`)
+      return returnFallback()
+    }
+
+    // Si es demasiado grande, WhatsApp suele ignorarlo → devolvemos fallback optimizado
     if (buf.byteLength > MAX_BYTES) {
-      return fallbackOg(title, subtitle, date, time, location)
+      console.log(`[OG-Image] Image too large (${buf.byteLength} bytes), using fallback`)
+      return returnFallback()
     }
 
     return new NextResponse(buf, {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        // Evitar caches agresivos del CDN; WhatsApp cachea por su cuenta.
-        'Cache-Control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
       },
     })
-  } catch {
-    return fallbackOg(title, subtitle, date, time, location)
+  } catch (err) {
+    console.error(`[OG-Image] Error fetching image:`, err)
+    return returnFallback()
   }
 }
-
