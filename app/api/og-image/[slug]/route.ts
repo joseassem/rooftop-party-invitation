@@ -2,14 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getEventBySlugWithSettings } from '@/lib/queries'
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
+import sharp from 'sharp'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const OG_SIZE = { width: 1200, height: 630 }
 const MAX_BYTES = 5 * 1024 * 1024 // 5MB (límite práctico para scrapers como WhatsApp/FB)
+const TARGET_SIZE_KB = 250 // Objetivo: < 250KB para WhatsApp
 const FETCH_TIMEOUT = 8000 // 8 segundos timeout para fetch de imagen
 const MIN_ASPECT_RATIO = 1.2 // Mínimo ratio ancho/alto para considerar imagen horizontal (landscape)
+
+// Comprimir imagen con sharp para WhatsApp (objetivo: < 250KB)
+async function compressForWhatsApp(imageBuffer: Buffer): Promise<Buffer> {
+  try {
+    const compressed = await sharp(imageBuffer)
+      .resize(1200, 630, { fit: 'cover', position: 'center' })
+      .jpeg({ quality: 80, progressive: true })
+      .toBuffer()
+    
+    console.log(`[OG-Image] Compressed from ${(imageBuffer.length/1024).toFixed(0)}KB to ${(compressed.length/1024).toFixed(0)}KB`)
+    return compressed
+  } catch (err) {
+    console.error(`[OG-Image] Compression failed:`, err)
+    return imageBuffer
+  }
+}
 
 // Función para obtener dimensiones de imagen desde buffer (PNG y JPEG)
 function getImageDimensions(buf: Buffer): { width: number; height: number } | null {
@@ -106,12 +124,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     if (existsSync(customPath)) {
       try {
         const imageBuffer = readFileSync(customPath)
-        const ext = customPath.endsWith('.png') ? 'png' : 'jpeg'
-        console.log(`[OG-Image] Using custom OG image: ${customPath}`)
-        return new NextResponse(imageBuffer, {
+        console.log(`[OG-Image] Found custom OG image: ${customPath} (${(imageBuffer.length/1024).toFixed(0)}KB)`)
+        
+        // Comprimir si es mayor a TARGET_SIZE_KB
+        let finalBuffer = imageBuffer
+        let contentType = customPath.endsWith('.png') ? 'image/png' : 'image/jpeg'
+        
+        if (imageBuffer.length > TARGET_SIZE_KB * 1024) {
+          console.log(`[OG-Image] Compressing image for WhatsApp compatibility...`)
+          finalBuffer = await compressForWhatsApp(imageBuffer)
+          contentType = 'image/jpeg' // Sharp convierte a JPEG
+        }
+        
+        return new NextResponse(finalBuffer, {
           status: 200,
           headers: {
-            'Content-Type': `image/${ext}`,
+            'Content-Type': contentType,
             'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
           },
         })
