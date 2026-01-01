@@ -409,34 +409,41 @@ export default function AdminDashboard() {
     // Try ISO format first (2025-01-30)
     if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
       const eventDate = new Date(dateStr)
+      console.log('[isEventPast] ISO date parsed:', eventDate, '< today:', today, '=', eventDate < today)
       return eventDate < today
     }
 
-    // Try to extract day and month from text like "SÁBADO, 29 NOV"
-    const match = dateStr.match(/(\d{1,2})\s*(\w+)/i)
+    // Try to extract day and month from text like "SÁBADO, 29 NOV" or "29 de noviembre"
+    // Flexible regex: day followed by any chars, then month abbreviation
+    const match = dateStr.match(/(\d{1,2})[^\d]*([a-zA-Z]{3,})/i)
     if (match) {
       const day = parseInt(match[1])
       const monthStr = match[2].toLowerCase()
       const month = monthMap[monthStr]
 
-      if (month !== undefined) {
-        // Assume current year or next year if month has passed
-        let year = now.getFullYear()
-        const eventDate = new Date(year, month, day)
+      console.log('[isEventPast] Parsed date string:', dateStr, '-> day:', day, 'monthStr:', monthStr, 'month:', month)
 
-        // If the parsed date is way in the past (more than 6 months ago), 
-        // assume it was from the previous year
-        const sixMonthsAgo = new Date(now)
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-        if (eventDate < sixMonthsAgo) {
-          // Event is in the past
-          return true
+      if (month !== undefined) {
+        // Try current year first
+        let year = now.getFullYear()
+        let eventDate = new Date(year, month, day)
+
+        // If the event date with current year is more than 2 months in the future,
+        // it was probably last year
+        const twoMonthsAhead = new Date(now)
+        twoMonthsAhead.setMonth(twoMonthsAhead.getMonth() + 2)
+        if (eventDate > twoMonthsAhead) {
+          year = now.getFullYear() - 1
+          eventDate = new Date(year, month, day)
         }
 
-        return eventDate < today
+        const isPast = eventDate < today
+        console.log('[isEventPast] Event date:', eventDate, '< today:', today, '=', isPast)
+        return isPast
       }
     }
 
+    console.log('[isEventPast] Could not parse date:', dateStr)
     // If we can't parse, don't block (allow sending)
     return false
   }
