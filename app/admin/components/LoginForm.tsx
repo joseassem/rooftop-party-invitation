@@ -61,7 +61,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         <div className={styles.loginContainer}>
             <div className={styles.loginBox}>
                 <h1>🔐 Admin Dashboard</h1>
-                <p>{eventConfig.event.title}</p>
+                <p>Party Time!</p>
 
                 <form onSubmit={handleLogin} className={styles.loginForm} autoComplete="off">
                     <input

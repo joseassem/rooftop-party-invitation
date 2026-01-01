@@ -845,7 +845,7 @@ export default function AdminDashboard() {
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <h1 className={styles.headerTitle}>Admin Dashboard</h1>
-          <span className={styles.headerSubtitle}>{eventConfig.event.title}</span>
+          <span className={styles.headerSubtitle}>Party Time!</span>
         </div>
         <div className={styles.headerActions}>
           {currentUser?.role === 'super_admin' && (
