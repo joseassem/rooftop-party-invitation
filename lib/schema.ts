@@ -1,9 +1,16 @@
 import { pgTable, text, boolean, timestamp, integer, jsonb, varchar } from 'drizzle-orm/pg-core'
-import crypto from 'crypto'
+
+// Helper to generate IDs safely across environments
+const generateId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID()
+    }
+    return Math.random().toString(36).substring(2) + Date.now().toString(36)
+}
 
 // Events table for multi-party support
 export const events = pgTable('events', {
-    id: text('id').primaryKey().notNull().$defaultFn(() => crypto.randomUUID()),
+    id: text('id').primaryKey().notNull().$defaultFn(generateId),
     slug: varchar('slug', { length: 100 }).notNull().unique(),
     title: text('title').notNull(),
     subtitle: text('subtitle').default(''),
@@ -54,7 +61,7 @@ export const events = pgTable('events', {
 
 // RSVPs table
 export const rsvps = pgTable('rsvps', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id').primaryKey().$defaultFn(generateId),
 
     // Reference to event (by slug for compatibility)
     eventId: text('event_id').notNull(),
@@ -95,7 +102,7 @@ export const appSettings = pgTable('app_settings', {
 
 // Users table for authentication and authorization
 export const users = pgTable('users', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id').primaryKey().$defaultFn(generateId),
     email: varchar('email', { length: 255 }).notNull().unique(),
     passwordHash: text('password_hash').notNull(),
     name: varchar('name', { length: 100 }).notNull(),
@@ -109,7 +116,7 @@ export const users = pgTable('users', {
 
 // User sessions for persistent login (up to 30 days)
 export const userSessions = pgTable('user_sessions', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id').primaryKey().$defaultFn(generateId),
     userId: text('user_id').notNull(),
     token: text('token').notNull().unique(),
     expiresAt: timestamp('expires_at').notNull(),
@@ -120,7 +127,7 @@ export const userSessions = pgTable('user_sessions', {
 
 // Assignment of events to users (for manager/viewer roles)
 export const userEventAssignments = pgTable('user_event_assignments', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id').primaryKey().$defaultFn(generateId),
     userId: text('user_id').notNull(),
     eventId: text('event_id').notNull(),
     // Role for this specific event: 'manager' or 'viewer'

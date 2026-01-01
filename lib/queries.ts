@@ -6,7 +6,6 @@
 import { db, isDatabaseConfigured, rsvps, events, appSettings } from './db'
 import { eq, desc, and } from 'drizzle-orm'
 import type { Event, NewEvent, RSVP, NewRSVP } from './schema'
-import crypto from 'crypto'
 
 // ============================================
 // RSVP Functions
@@ -187,7 +186,8 @@ export async function getEventStats(eventId: string) {
 export function generateCancelToken(rsvpId: string, email: string): string {
     const secret = process.env.CANCEL_TOKEN_SECRET || 'default-secret'
     const data = `${rsvpId}-${email}-${secret}`
-    return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32)
+    const nodeCrypto = require('crypto')
+    return nodeCrypto.createHash('sha256').update(data).digest('hex').substring(0, 32)
 }
 
 export function validateCancelToken(token: string, rsvpId: string, email: string): boolean {

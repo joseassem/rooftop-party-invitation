@@ -1,10 +1,4 @@
-/**
- * Authentication utilities for user management
- * Provides password hashing, session management, and token validation
- */
-
 import bcrypt from 'bcrypt'
-import crypto from 'crypto'
 import { db, users, userSessions } from './db'
 import { eq, and, gt, lt } from 'drizzle-orm'
 import type { User, UserSession } from './schema'
@@ -40,7 +34,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * Generate a secure session token
  */
 function generateSessionToken(): string {
-    return crypto.randomBytes(32).toString('hex')
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+    // Fallback for Node.js environments without global crypto
+    return require('crypto').randomBytes(32).toString('hex');
 }
 
 /**
