@@ -31,7 +31,6 @@ export async function generateMetadata(): Promise<Metadata> {
             {
               url: `${baseUrl}/opengraph-image`,
               secureUrl: `${baseUrl}/opengraph-image`,
-              type: 'image/png',
               width: 1200,
               height: 630,
               alt: eventConfig.event.title,
@@ -51,7 +50,7 @@ export async function generateMetadata(): Promise<Metadata> {
     const description = `${event.date} ${event.time} - ${event.location}`
 
     // Preferir la imagen configurada en el evento (si existe). Fallback a imagen OG generada.
-    let imageUrl = event.backgroundImageUrl || `/${event.slug}/opengraph-image`
+    let imageUrl = event.backgroundImageUrl || `${baseUrl}/api/og/${event.slug}`
     if (imageUrl.startsWith('/')) {
       imageUrl = `${baseUrl}${imageUrl}`
     }
@@ -71,7 +70,6 @@ export async function generateMetadata(): Promise<Metadata> {
           {
             url: imageUrl,
             secureUrl: imageUrl,
-            type: 'image/png',
             width: 1200,
             height: 630,
             alt: event.title,
@@ -102,7 +100,6 @@ export async function generateMetadata(): Promise<Metadata> {
           {
             url: `${baseUrl}/opengraph-image`,
             secureUrl: `${baseUrl}/opengraph-image`,
-            type: 'image/png',
             width: 1200,
             height: 630,
             alt: eventConfig.event.title,

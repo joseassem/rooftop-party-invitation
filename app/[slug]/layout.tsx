@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
         const title = `${event.title} - ${event.subtitle}`
         const description = `${event.date} ${event.time} - ${event.location}`
 
-        // Preferir la imagen configurada en el evento (si existe). Fallback a imagen OG generada.
-        let imageUrl = event.backgroundImageUrl || `${baseUrl}/${slug}/opengraph-image`
+        // Preferir la imagen configurada en el evento (si existe). Fallback a imagen OG generada (endpoint normal).
+        let imageUrl = event.backgroundImageUrl || `${baseUrl}/api/og/${slug}`
         if (imageUrl.startsWith('/')) {
             imageUrl = `${baseUrl}${imageUrl}`
         }
@@ -46,7 +46,6 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
                     {
                         url: imageUrl,
                         secureUrl: imageUrl,
-                        type: 'image/png',
                         width: 1200,
                         height: 630,
                         alt: event.title,

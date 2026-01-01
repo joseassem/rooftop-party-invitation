@@ -1,17 +1,14 @@
 import { ImageResponse } from 'next/og'
 import eventConfig from '@/event-config.json'
 import { getEventBySlugWithSettings } from '@/lib/queries'
+import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
-export const alt = 'Invitación a fiesta'
-export const size = {
-  width: 1200,
-  height: 630,
-}
-export const contentType = 'image/png'
 
-export default async function Image({ params }: { params: { slug: string } }) {
-  const { slug } = params
+const size = { width: 1200, height: 630 }
+
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
 
   let title = eventConfig.event.title
   let subtitle = eventConfig.event.subtitle
@@ -29,7 +26,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
       location = event.location
     }
   } catch {
-    // Si falla DB (edge/build/etc), usamos config estático.
+    // fallback a config estático
   }
 
   return new ImageResponse(
@@ -108,9 +105,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
         </div>
       </div>
     ),
-    {
-      ...size,
-    }
+    { ...size }
   )
 }
 
