@@ -137,12 +137,7 @@ export default function AdminDashboard() {
     }
   }
 
-  // Load RSVPs once authenticated
-  useEffect(() => {
-    if (isAuthenticated && !checkingAuth) {
-      loadRSVPs()
-    }
-  }, [isAuthenticated, checkingAuth])
+  // RSVPs will be loaded by the useEffect watching selectedEventId once it's initialized
 
   // Cargar lista de eventos
   const loadEvents = async () => {
@@ -202,6 +197,21 @@ export default function AdminDashboard() {
   }
 
 
+  // Initialize from localStorage on mount
+  useEffect(() => {
+    const savedEvent = localStorage.getItem('rp_selected_event')
+    if (savedEvent) {
+      setSelectedEventId(savedEvent)
+    }
+  }, [])
+
+  // Save to localStorage when selection changes
+  useEffect(() => {
+    if (selectedEventId) {
+      localStorage.setItem('rp_selected_event', selectedEventId)
+    }
+  }, [selectedEventId])
+
   // Cargar eventos al montar
   useEffect(() => {
     if (isAuthenticated) {
@@ -210,20 +220,29 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated])
 
-  // Auto-select home event when homeEventId is loaded
+  // Auto-select event when data is loaded
   useEffect(() => {
-    if (homeEventId && !selectedEventId) {
-      // Find the event slug that matches homeEventId (which is the UUID)
-      const homeEvent = events.find(e => e.id === homeEventId)
-      if (homeEvent) {
-        setSelectedEventId(homeEvent.slug)
-      } else if (events.length > 0) {
-        // Fallback to first event if home event not found
+    // Only run if we don't have a selection yet
+    if (!selectedEventId && events.length > 0) {
+      const savedEvent = localStorage.getItem('rp_selected_event')
+
+      // 1. Try to restore from localStorage if the event still exists
+      if (savedEvent && events.some(e => e.slug === savedEvent)) {
+        setSelectedEventId(savedEvent)
+      }
+      // 2. Otherwise try to select the home event
+      else if (homeEventId) {
+        const homeEvent = events.find(e => e.id === homeEventId)
+        if (homeEvent) {
+          setSelectedEventId(homeEvent.slug)
+        } else {
+          setSelectedEventId(events[0].slug)
+        }
+      }
+      // 3. Last fallback: first event in list
+      else {
         setSelectedEventId(events[0].slug)
       }
-    } else if (!selectedEventId && events.length > 0) {
-      // If no home event set, select the first available
-      setSelectedEventId(events[0].slug)
     }
   }, [homeEventId, events, selectedEventId])
 
@@ -820,20 +839,21 @@ export default function AdminDashboard() {
       </header>
 
       {/* Event Selector - Always visible */}
-      <div style={{ padding: '15px 20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '0', display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-        <label htmlFor="globalEventSelect" style={{ fontWeight: 'bold', color: 'white', fontSize: '16px' }}>
-          🎪 Evento Activo:
+      <div style={{ padding: '8px 15px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '0', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+        <label htmlFor="globalEventSelect" style={{ fontWeight: 'bold', color: 'white', fontSize: '13px', whiteSpace: 'nowrap' }}>
+          🎪 Evento:
         </label>
         <select
           id="globalEventSelect"
           value={selectedEventId}
           onChange={(e) => setSelectedEventId(e.target.value)}
           style={{
-            padding: '10px 15px',
+            padding: '6px 10px',
             borderRadius: '8px',
             border: 'none',
-            fontSize: '14px',
-            minWidth: '280px',
+            fontSize: '13px',
+            minWidth: '120px',
+            flex: '1',
             fontWeight: '500'
           }}
         >
@@ -842,41 +862,52 @@ export default function AdminDashboard() {
           )}
           {events.map((evt) => (
             <option key={evt.id} value={evt.slug}>
-              {evt.title} {evt.subtitle && `- ${evt.subtitle}`} {!evt.isActive && '(Inactivo)'} {evt.id === homeEventId && '🏠'}
+              {evt.title} {evt.id === homeEventId && '🏠'} {!evt.isActive && '(Inactivo)'}
             </option>
           ))}
         </select>
-        <a
-          href={`/${selectedEventId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: '10px 15px',
-            background: 'white',
-            color: '#667eea',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: '600'
-          }}
-        >
-          🔗 Ver Página
-        </a>
-        <button
-          onClick={() => setActiveTab('eventos')}
-          style={{
-            padding: '10px 15px',
-            background: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            border: '2px solid white',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '600'
-          }}
-        >
-          + Nueva Fiesta
-        </button>
+
+        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+          <button
+            onClick={() => setActiveTab('eventos')}
+            style={{
+              padding: '6px 12px',
+              background: activeTab === 'eventos' ? 'white' : 'rgba(255,255,255,0.2)',
+              color: activeTab === 'eventos' ? '#667eea' : 'white',
+              border: '2px solid white',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Gestionar Eventos"
+          >
+            📂 <span style={{ display: 'none' }}>Eventos</span>
+          </button>
+
+          <a
+            href={`/${selectedEventId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '6px 12px',
+              background: 'white',
+              color: '#667eea',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '13px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            title="Ver Página"
+          >
+            🔗
+          </a>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -888,16 +919,10 @@ export default function AdminDashboard() {
           📊 Dashboard
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'eventos' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('eventos')}
-        >
-          🎉 Eventos
-        </button>
-        <button
           className={`${styles.tab} ${activeTab === 'config' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('config')}
         >
-          ⚙️ Configuración
+          ⚙️ Config
         </button>
         {currentUser?.role === 'super_admin' && (
           <button
