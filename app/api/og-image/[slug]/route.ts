@@ -147,7 +147,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           contentType = 'image/jpeg' // Sharp convierte a JPEG
         }
         
-        return new NextResponse(finalBuffer, {
+        return new NextResponse(new Uint8Array(finalBuffer), {
           status: 200,
           headers: {
             'Content-Type': contentType,
