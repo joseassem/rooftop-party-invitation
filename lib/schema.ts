@@ -1,4 +1,5 @@
 import { pgTable, text, boolean, timestamp, integer, jsonb, varchar } from 'drizzle-orm/pg-core'
+import crypto from 'crypto'
 
 // Events table for multi-party support
 export const events = pgTable('events', {

@@ -63,10 +63,6 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-/**
- * Home page - redirects to the default event's slug or the configured home event
- * All events should be accessed via /{slug}
- */
 export default async function Home() {
   noStore()
 
