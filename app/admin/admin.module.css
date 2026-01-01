@@ -373,39 +373,48 @@
     width: 100%;
   }
 
-  /* Header responsive */
+  /* Header responsive - FORCE single row */
   .header {
-    padding: 8px 10px;
+    padding: 10px 12px;
     height: auto;
-    min-height: 50px;
+    display: flex;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .headerLeft {
-    gap: 8px;
-    flex: 1;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .headerTitle {
     font-size: 14px;
+    margin: 0;
   }
 
   .headerSubtitle {
-    display: none;
+    display: none !important;
   }
 
   .headerActions {
-    gap: 4px;
+    display: flex;
+    gap: 0;
+    flex-shrink: 0;
   }
 
   .viewSiteBtn {
-    padding: 5px 8px;
-    font-size: 12px;
+    display: none;
   }
 
   .logoutBtn {
-    padding: 5px 8px;
-    font-size: 11px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
   }
 }
 
