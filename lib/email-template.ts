@@ -127,10 +127,10 @@ export function generateConfirmationEmail({
                       </tr>
                     </table>
                     ` : ''}
-                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;">
                       ${event.title}
                     </h1>
-                    <h2 style="margin: 8px 0 0 0; color: rgba(255,255,255,0.7); font-size: 18px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase;">
+                    <h2 style="margin: 8px 0 0 0; color: rgba(255,255,255,0.8); font-size: 18px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;">
                       ${event.subtitle}
                     </h2>
                   </td>
