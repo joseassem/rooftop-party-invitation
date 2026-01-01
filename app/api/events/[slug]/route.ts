@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }, { status: 503 })
         }
 
-        const { getEventBySlug, updateEvent } = await import('@/lib/queries')
+        const { getEventBySlug, updateEvent, updateEventSlug } = await import('@/lib/queries')
         const existingEvent = await getEventBySlug(slug)
 
         if (!existingEvent) {
@@ -134,7 +134,31 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         const body = await request.json()
 
-        // Build update object (only include provided fields)
+        // Handle slug change separately (requires updating RSVPs too)
+        let updatedRsvpsCount = 0
+        let finalEvent = existingEvent
+        if (body.newSlug !== undefined && body.newSlug !== slug) {
+            // Only super_admin can change slugs (it's a more sensitive operation)
+            if (currentUser.role !== 'super_admin') {
+                return NextResponse.json({
+                    success: false,
+                    error: 'Solo un Super Admin puede cambiar el slug de un evento'
+                }, { status: 403 })
+            }
+
+            try {
+                const result = await updateEventSlug(existingEvent.id, body.newSlug)
+                finalEvent = result.event
+                updatedRsvpsCount = result.updatedRsvps
+            } catch (error: any) {
+                return NextResponse.json({
+                    success: false,
+                    error: error.message || 'Error al cambiar el slug'
+                }, { status: 400 })
+            }
+        }
+
+        // Build update object (only include provided fields, excluding slug)
         const updates: any = {}
 
         if (body.title !== undefined) updates.title = body.title
@@ -153,11 +177,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (body.contact?.hostEmail !== undefined) updates.hostEmail = body.contact.hostEmail
         if (body.isActive !== undefined) updates.isActive = body.isActive
 
-        const updatedEvent = await updateEvent(existingEvent.id, updates)
+        // Only call updateEvent if there are updates beyond slug
+        if (Object.keys(updates).length > 0) {
+            finalEvent = await updateEvent(finalEvent.id, updates)
+        }
 
         return NextResponse.json({
             success: true,
-            event: updatedEvent
+            event: finalEvent,
+            ...(updatedRsvpsCount > 0 && { 
+                slugChanged: true,
+                updatedRsvps: updatedRsvpsCount,
+                newSlug: body.newSlug 
+            })
         })
     } catch (error) {
         console.error('Error updating event:', error)

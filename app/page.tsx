@@ -49,11 +49,8 @@ export async function generateMetadata(): Promise<Metadata> {
     const title = `${event.title} - ${event.subtitle}`
     const description = `${event.date} ${event.time} - ${event.location}`
 
-    // Preferir la imagen configurada en el evento (si existe). Fallback a imagen OG generada.
-    let imageUrl = event.backgroundImageUrl || `${baseUrl}/api/og/${event.slug}`
-    if (imageUrl.startsWith('/')) {
-      imageUrl = `${baseUrl}${imageUrl}`
-    }
+    // Para WhatsApp: servir SIEMPRE desde nuestro dominio (proxy+fallback) para evitar bloqueos del host de la imagen.
+    const imageUrl = `${baseUrl}/api/og-image/${event.slug}`
 
     return {
       metadataBase: new URL(baseUrl),

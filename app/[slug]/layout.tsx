@@ -1,14 +1,17 @@
 import { Metadata } from 'next'
 import { getEventBySlugWithSettings } from '@/lib/queries'
-import eventConfig from '@/event-config.json'
+
+// Forzar regeneración dinámica de metadatos en cada request
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface LayoutProps {
     children: React.ReactNode
-    params: { slug: string }
+    params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
-    const { slug } = params
+    const { slug } = await params
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://party.timekast.mx'
 
     try {
@@ -25,11 +28,8 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
         const title = `${event.title} - ${event.subtitle}`
         const description = `${event.date} ${event.time} - ${event.location}`
 
-        // Preferir la imagen configurada en el evento (si existe). Fallback a imagen OG generada (endpoint normal).
-        let imageUrl = event.backgroundImageUrl || `${baseUrl}/api/og/${slug}`
-        if (imageUrl.startsWith('/')) {
-            imageUrl = `${baseUrl}${imageUrl}`
-        }
+        // Para WhatsApp: servir SIEMPRE desde nuestro dominio (proxy+fallback) para evitar bloqueos del host de la imagen.
+        const imageUrl = `${baseUrl}/api/og-image/${slug}`
 
         return {
             metadataBase: new URL(baseUrl),
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
                 type: 'website',
                 locale: 'es_MX',
                 url: `${baseUrl}/${slug}`,
-                siteName: eventConfig.event.title,
+                siteName: event.title,
                 images: [
                     {
                         url: imageUrl,
@@ -60,10 +60,11 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
             },
         }
     } catch (error) {
+        console.error('[EventLayout] Error generating metadata:', error)
         return {
             metadataBase: new URL(baseUrl),
-            title: eventConfig.event.title,
-            description: eventConfig.event.subtitle,
+            title: 'Evento',
+            description: 'Invitación a evento',
         }
     }
 }

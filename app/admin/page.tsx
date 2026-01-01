@@ -71,6 +71,10 @@ export default function AdminDashboard() {
     plusOne: false
   })
 
+  // Estado para modal de edición de slug
+  const [editingSlugEvent, setEditingSlugEvent] = useState<Event | null>(null)
+  const [newSlug, setNewSlug] = useState('')
+
   // Check authentication on mount
   useEffect(() => {
     async function checkAuth() {
@@ -637,6 +641,91 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       setMessage('❌ Error al guardar cambios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Abrir modal de edición de slug
+  const openEditSlugModal = (evt: Event) => {
+    setEditingSlugEvent(evt)
+    setNewSlug(evt.slug)
+  }
+
+  // Cerrar modal de edición de slug
+  const closeEditSlugModal = () => {
+    setEditingSlugEvent(null)
+    setNewSlug('')
+  }
+
+  // Guardar nuevo slug
+  const saveNewSlug = async () => {
+    if (!editingSlugEvent) return
+
+    const trimmedSlug = newSlug.trim().toLowerCase()
+
+    // Validar formato
+    if (!/^[a-z0-9-]+$/.test(trimmedSlug)) {
+      setMessage('❌ El slug solo puede contener letras minúsculas, números y guiones')
+      return
+    }
+
+    if (trimmedSlug.length < 2) {
+      setMessage('❌ El slug debe tener al menos 2 caracteres')
+      return
+    }
+
+    if (trimmedSlug === editingSlugEvent.slug) {
+      closeEditSlugModal()
+      return
+    }
+
+    const confirmed = window.confirm(
+      `¿Estás seguro de cambiar el slug de "${editingSlugEvent.slug}" a "${trimmedSlug}"?\n\n` +
+      `⚠️ Esto cambiará la URL del evento y actualizará todas las referencias.\n` +
+      `• URL antigua: /${editingSlugEvent.slug}\n` +
+      `• URL nueva: /${trimmedSlug}\n\n` +
+      `Los enlaces compartidos anteriormente dejarán de funcionar.`
+    )
+
+    if (!confirmed) return
+
+    setLoading(true)
+    setMessage('Actualizando slug...')
+
+    try {
+      const response = await fetch(`/api/events/${editingSlugEvent.slug}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newSlug: trimmedSlug })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        let msg = `✅ Slug cambiado exitosamente a "/${trimmedSlug}"`
+        if (data.updatedRsvps > 0) {
+          msg += ` | ${data.updatedRsvps} RSVP(s) actualizados`
+        }
+        setMessage(msg)
+
+        // Actualizar el evento seleccionado si era el que cambiamos
+        if (selectedEventId === editingSlugEvent.slug) {
+          setSelectedEventId(trimmedSlug)
+        }
+
+        closeEditSlugModal()
+        loadEvents() // Recargar lista de eventos
+
+        setTimeout(() => setMessage(''), 5000)
+      } else {
+        setMessage(`❌ Error: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Error al cambiar slug:', error)
+      setMessage('❌ Error de conexión')
     } finally {
       setLoading(false)
     }
@@ -1508,7 +1597,7 @@ export default function AdminDashboard() {
                         📅 {evt.date} | 📍 {evt.location} | 🔗 /{evt.slug}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       <a
                         href={`/${evt.slug}`}
                         target="_blank"
@@ -1541,6 +1630,24 @@ export default function AdminDashboard() {
                         }}
                       >
                         Ver RSVPs
+                      </button>
+                      <button
+                        onClick={() => openEditSlugModal(evt)}
+                        style={{
+                          padding: '8px 15px',
+                          background: 'rgba(255,215,0,0.3)',
+                          color: 'inherit',
+                          borderRadius: '6px',
+                          border: '1px solid #FFD700',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        title="Editar slug (URL)"
+                      >
+                        ✏️ Slug
                       </button>
                       <button
                         onClick={() => evt.id && setAsHome(evt.id)}
@@ -1744,6 +1851,82 @@ export default function AdminDashboard() {
       {/* Contenido de Usuarios (solo super_admin) */}
       {activeTab === 'usuarios' && currentUser?.role === 'super_admin' && (
         <UserManagement events={events} />
+      )}
+
+      {/* Modal de edición de slug */}
+      {editingSlugEvent && (
+        <div className={styles.editModal} onClick={closeEditSlugModal}>
+          <div className={styles.editModalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.editModalTitle}>✏️ Editar Slug (URL)</h2>
+            <p style={{ marginBottom: '20px', color: '#666', fontSize: '14px' }}>
+              Cambiar el slug modificará la URL del evento y actualizará todas las referencias incluyendo los RSVPs.
+            </p>
+
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#f0f4ff', borderRadius: '8px' }}>
+              <strong>Evento:</strong> {editingSlugEvent.title}
+              <br />
+              <strong>URL actual:</strong> <code style={{ background: '#e0e7ff', padding: '2px 6px', borderRadius: '4px' }}>/{editingSlugEvent.slug}</code>
+            </div>
+
+            <form className={styles.editForm} onSubmit={(e) => { e.preventDefault(); saveNewSlug(); }}>
+              <div className={styles.editFormGroup}>
+                <label className={styles.editFormLabel}>Nuevo Slug *</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ color: '#666', fontSize: '16px' }}>/</span>
+                  <input
+                    type="text"
+                    className={styles.editFormInput}
+                    value={newSlug}
+                    onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    placeholder="mi-nuevo-slug"
+                    pattern="[a-z0-9-]+"
+                    required
+                    autoFocus
+                    style={{ flex: 1 }}
+                  />
+                </div>
+                <small style={{ color: '#888', marginTop: '5px', display: 'block' }}>
+                  Solo letras minúsculas, números y guiones (-)
+                </small>
+              </div>
+
+              {newSlug && newSlug !== editingSlugEvent.slug && (
+                <div style={{ 
+                  marginBottom: '15px', 
+                  padding: '12px', 
+                  background: '#fff3cd', 
+                  borderRadius: '8px',
+                  border: '1px solid #ffc107'
+                }}>
+                  <strong>⚠️ Advertencia:</strong>
+                  <ul style={{ margin: '8px 0 0 20px', fontSize: '14px' }}>
+                    <li>La URL cambiará de <code>/{editingSlugEvent.slug}</code> a <code>/{newSlug}</code></li>
+                    <li>Los enlaces compartidos anteriormente dejarán de funcionar</li>
+                    <li>La metadata para redes sociales se actualizará automáticamente</li>
+                    <li>Todos los RSVPs serán actualizados al nuevo slug</li>
+                  </ul>
+                </div>
+              )}
+
+              <div className={styles.editFormButtons}>
+                <button
+                  type="button"
+                  className={styles.editFormCancelBtn}
+                  onClick={closeEditSlugModal}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={styles.editFormSaveBtn}
+                  disabled={loading || !newSlug || newSlug === editingSlugEvent.slug}
+                >
+                  {loading ? 'Guardando...' : '💾 Cambiar Slug'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )

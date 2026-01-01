@@ -333,6 +333,72 @@ export async function deleteEvent(eventId: string, hardDelete: boolean = false):
     return true
 }
 
+/**
+ * Update event slug
+ * This also updates all RSVPs that reference the old slug
+ * @returns The updated event and the count of updated RSVPs
+ */
+export async function updateEventSlug(
+    eventId: string,
+    newSlug: string
+): Promise<{ event: Event; updatedRsvps: number }> {
+    if (!db) throw new Error('Database not configured')
+
+    // 1. Validate new slug format
+    if (!/^[a-z0-9-]+$/.test(newSlug)) {
+        throw new Error('El slug solo puede contener letras minúsculas, números y guiones')
+    }
+
+    // 2. Get the current event
+    const [currentEvent] = await db.select()
+        .from(events)
+        .where(eq(events.id, eventId))
+        .limit(1)
+
+    if (!currentEvent) {
+        throw new Error('Evento no encontrado')
+    }
+
+    const oldSlug = currentEvent.slug
+
+    // 3. If slug is the same, no changes needed
+    if (oldSlug === newSlug) {
+        return { event: currentEvent, updatedRsvps: 0 }
+    }
+
+    // 4. Check if new slug is already in use
+    const [existingWithSlug] = await db.select()
+        .from(events)
+        .where(eq(events.slug, newSlug))
+        .limit(1)
+
+    if (existingWithSlug) {
+        throw new Error('Ya existe un evento con este slug')
+    }
+
+    // 5. Update the event's slug
+    const [updatedEvent] = await db.update(events)
+        .set({ slug: newSlug, updatedAt: new Date() })
+        .where(eq(events.id, eventId))
+        .returning()
+
+    // 6. Update all RSVPs that reference the old slug
+    const result = await db.update(rsvps)
+        .set({ eventId: newSlug })
+        .where(eq(rsvps.eventId, oldSlug))
+
+    // Drizzle returns the number of affected rows in different ways depending on driver
+    // We'll count manually
+    const oldRsvps = await db.select()
+        .from(rsvps)
+        .where(eq(rsvps.eventId, newSlug))
+
+    return {
+        event: updatedEvent,
+        updatedRsvps: oldRsvps.length
+    }
+}
+
 // ============================================
 // App Settings Functions
 // ============================================
