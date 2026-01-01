@@ -29,7 +29,8 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
         const description = `${event.date} ${event.time} - ${event.location}`
 
         // Para WhatsApp: servir SIEMPRE desde nuestro dominio (proxy+fallback) para evitar bloqueos del host de la imagen.
-        const imageUrl = `${baseUrl}/api/og-image/${slug}`
+        // El parámetro v= fuerza invalidación de caché cuando se cambia la imagen OG
+        const imageUrl = `${baseUrl}/api/og-image/${slug}?v=2`
 
         return {
             metadataBase: new URL(baseUrl),
