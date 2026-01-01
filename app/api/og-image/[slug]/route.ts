@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ImageResponse } from 'next/og'
-import React from 'react'
 import { getEventBySlugWithSettings } from '@/lib/queries'
 
 export const runtime = 'nodejs'
@@ -9,95 +7,85 @@ export const dynamic = 'force-dynamic'
 const OG_SIZE = { width: 1200, height: 630 }
 const MAX_BYTES = 5 * 1024 * 1024 // 5MB (límite práctico para scrapers como WhatsApp/FB)
 const FETCH_TIMEOUT = 8000 // 8 segundos timeout para fetch de imagen
+const MIN_ASPECT_RATIO = 1.2 // Mínimo ratio ancho/alto para considerar imagen horizontal (landscape)
 
-function createFallbackOg(title: string, subtitle: string, date: string, time: string, location: string) {
-  const rootStyle: React.CSSProperties = {
-    height: '100%',
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0a0015',
-    backgroundImage: 'linear-gradient(135deg, #1a0033 0%, #0a0015 50%, #000510 100%)',
+// Función para obtener dimensiones de imagen desde buffer (PNG y JPEG)
+function getImageDimensions(buf: Buffer): { width: number; height: number } | null {
+  try {
+    // PNG: bytes 16-19 = width, 20-23 = height (big-endian)
+    if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+      const width = buf.readUInt32BE(16)
+      const height = buf.readUInt32BE(20)
+      return { width, height }
+    }
+    
+    // JPEG: buscar marker SOF0 (0xFFC0) o SOF2 (0xFFC2)
+    if (buf[0] === 0xFF && buf[1] === 0xD8) {
+      let offset = 2
+      while (offset < buf.length - 8) {
+        if (buf[offset] !== 0xFF) {
+          offset++
+          continue
+        }
+        const marker = buf[offset + 1]
+        // SOF markers: 0xC0-0xCF (excepto 0xC4, 0xC8, 0xCC que son otros)
+        if ((marker >= 0xC0 && marker <= 0xCF) && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+          const height = buf.readUInt16BE(offset + 5)
+          const width = buf.readUInt16BE(offset + 7)
+          return { width, height }
+        }
+        // Saltar al siguiente segmento
+        const segmentLength = buf.readUInt16BE(offset + 2)
+        offset += 2 + segmentLength
+      }
+    }
+    
+    return null
+  } catch {
+    return null
   }
-
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '48px',
-    textAlign: 'center',
-    width: '100%',
-    maxWidth: '1000px',
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '68px',
-    fontWeight: 800,
-    color: '#ff6b9d',
-    textShadow: '0 0 30px rgba(255, 107, 157, 0.8)',
-    lineHeight: 1.05,
-  }
-
-  const subtitleStyle: React.CSSProperties = {
-    marginTop: '18px',
-    fontSize: '34px',
-    color: '#00f5ff',
-    textShadow: '0 0 20px rgba(0, 245, 255, 0.6)',
-    lineHeight: 1.2,
-  }
-
-  const dateRowStyle: React.CSSProperties = {
-    marginTop: '34px',
-    display: 'flex',
-    gap: '28px',
-    fontSize: '28px',
-    color: '#ffffff',
-    opacity: 0.95,
-  }
-
-  const locationStyle: React.CSSProperties = {
-    marginTop: '18px',
-    fontSize: '24px',
-    color: '#b8b8b8',
-  }
-
-  return new ImageResponse(
-    React.createElement(
-      'div',
-      { style: rootStyle },
-      React.createElement(
-        'div',
-        { style: containerStyle },
-        React.createElement('div', { style: titleStyle }, title),
-        React.createElement('div', { style: subtitleStyle }, subtitle),
-        React.createElement(
-          'div',
-          { style: dateRowStyle },
-          React.createElement('span', null, date),
-          React.createElement('span', null, time)
-        ),
-        React.createElement('div', { style: locationStyle }, location)
-      )
-    ),
-    { ...OG_SIZE }
-  )
 }
 
-// Fallback simple sin ImageResponse (para casos donde ImageResponse falla)
-function simpleFallbackResponse() {
-  // Devolver un placeholder 1x1 pixel PNG transparente
-  const pixel = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-    'base64'
-  )
-  return new NextResponse(pixel, {
+// Escapar caracteres especiales para XML/SVG
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+// Genera una imagen OG como SVG - funciona universalmente sin dependencias problemáticas
+function createOgSvg(title: string, subtitle: string, date: string, time: string, location: string): NextResponse {
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${OG_SIZE.width}" height="${OG_SIZE.height}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0033"/>
+      <stop offset="50%" style="stop-color:#0a0015"/>
+      <stop offset="100%" style="stop-color:#000510"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <text x="600" y="200" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif" font-size="64" font-weight="800" fill="#ff6b9d" filter="url(#glow)">${escapeXml(title)}</text>
+  <text x="600" y="280" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif" font-size="32" fill="#00f5ff" filter="url(#glow)">${escapeXml(subtitle)}</text>
+  <text x="600" y="380" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif" font-size="26" fill="#ffffff">${escapeXml(date)}  •  ${escapeXml(time)}</text>
+  <text x="600" y="440" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif" font-size="22" fill="#b8b8b8">📍 ${escapeXml(location)}</text>
+</svg>`
+
+  return new NextResponse(svg, {
     status: 200,
     headers: {
-      'Content-Type': 'image/png',
-      'Cache-Control': 'no-cache',
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
     },
   })
 }
@@ -131,19 +119,15 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     console.error(`[OG-Image] Error fetching event:`, err)
   }
 
-  // Helper para devolver fallback con manejo de errores
-  const returnFallback = async () => {
-    try {
-      return createFallbackOg(title, subtitle, date, time, location)
-    } catch (fallbackErr) {
-      console.error(`[OG-Image] Fallback ImageResponse failed:`, fallbackErr)
-      return simpleFallbackResponse()
-    }
+  // Helper para devolver fallback SVG
+  const returnFallback = () => {
+    console.log(`[OG-Image] Returning generated SVG fallback`)
+    return createOgSvg(title, subtitle, date, time, location)
   }
 
   // Si no hay imagen configurada, usar fallback generado
   if (!imageUrl) {
-    console.log(`[OG-Image] No image URL, using generated fallback`)
+    console.log(`[OG-Image] No image URL configured, using generated fallback`)
     return returnFallback()
   }
 
@@ -198,6 +182,20 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     if (buf.byteLength > MAX_BYTES) {
       console.log(`[OG-Image] Image too large (${buf.byteLength} bytes), using fallback`)
       return returnFallback()
+    }
+
+    // Verificar dimensiones: si es vertical (portrait), usar fallback con formato OG correcto
+    const dimensions = getImageDimensions(buf)
+    if (dimensions) {
+      const aspectRatio = dimensions.width / dimensions.height
+      console.log(`[OG-Image] Image dimensions: ${dimensions.width}x${dimensions.height}, aspect ratio: ${aspectRatio.toFixed(2)}`)
+      
+      if (aspectRatio < MIN_ASPECT_RATIO) {
+        console.log(`[OG-Image] Image is vertical/square (ratio ${aspectRatio.toFixed(2)} < ${MIN_ASPECT_RATIO}), using generated OG fallback`)
+        return returnFallback()
+      }
+    } else {
+      console.log(`[OG-Image] Could not determine image dimensions, proceeding with proxy`)
     }
 
     return new NextResponse(buf, {
